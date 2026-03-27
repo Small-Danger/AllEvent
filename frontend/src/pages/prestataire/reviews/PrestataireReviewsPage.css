@@ -1,0 +1,10 @@
+.pro-reviews-page { display:grid; gap:12px; }
+.pro-reviews-page h1 { margin:0; }
+.pro-card-list { display:grid; gap:10px; }
+.review-row { background:#fff; border:1px solid #dbe3ef; border-radius:14px; padding:12px; }
+.review-row h2 { margin:0; font-size:1rem; }
+.review-row p { margin:7px 0; }
+.review-footer { display:flex; justify-content:space-between; align-items:center; }
+.review-footer small { color:#64748b; }
+.review-footer span { color:#166534; font-weight:700; font-size:.86rem; }
+.review-footer button { border:1px solid #dbe3ef; border-radius:8px; padding:7px 9px; background:#fff; cursor:pointer; font-weight:700; }

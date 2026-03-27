@@ -1,29 +1,7 @@
-import { PagePlaceholder } from '../../components/ui/PagePlaceholder'
-
-export function ClientDashboardPage() {
-  return <PagePlaceholder title="Client Dashboard" scope="Client" />
-}
-
-export function ClientReservationsPage() {
-  return <PagePlaceholder title="Client Reservations" scope="Client" />
-}
-
-export function ClientFavoritesPage() {
-  return <PagePlaceholder title="Client Favorites" scope="Client" />
-}
-
-export function ClientProfilePage() {
-  return <PagePlaceholder title="Client Profile" scope="Client" />
-}
-
-export function ClientReviewsPage() {
-  return <PagePlaceholder title="Client Reviews" scope="Client" />
-}
-
-export function ClientMessagesPage() {
-  return <PagePlaceholder title="Client Messages" scope="Client" />
-}
-
-export function ClientPaymentsPage() {
-  return <PagePlaceholder title="Client Payments" scope="Client" />
-}
+export { ClientDashboardPage } from './dashboard/ClientDashboardPage'
+export { ClientReservationsPage } from './reservations/ClientReservationsPage'
+export { ClientFavoritesPage } from './favorites/ClientFavoritesPage'
+export { ClientProfilePage } from './profile/ClientProfilePage'
+export { ClientReviewsPage } from './reviews/ClientReviewsPage'
+export { ClientMessagesPage } from './messages/ClientMessagesPage'
+export { ClientPaymentsPage } from './payments/ClientPaymentsPage'

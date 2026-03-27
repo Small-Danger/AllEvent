@@ -1,0 +1,7 @@
+.pro-availability-page { display:grid; gap:12px; }
+.pro-availability-page h1 { margin:0; }
+.pro-card-list { display:grid; gap:10px; }
+.slot-card { background:#fff; border:1px solid #dbe3ef; border-radius:14px; padding:12px; display:flex; justify-content:space-between; align-items:center; }
+.slot-card h2 { margin:0; font-size:1rem; }
+.slot-card p { margin:3px 0 0; color:#64748b; }
+.slot-card label { display:flex; gap:6px; align-items:center; font-weight:700; color:#334155; }

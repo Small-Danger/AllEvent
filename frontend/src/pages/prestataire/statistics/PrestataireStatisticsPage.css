@@ -1,0 +1,6 @@
+.pro-statistics-page { display:grid; gap:12px; }
+.pro-statistics-page h1 { margin:0; }
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.stats-grid article { border:1px solid #dbe3ef; border-radius:14px; background:#fff; padding:12px; display:grid; gap:6px; }
+.stats-grid span { color:#64748b; font-size:.85rem; }
+@media (max-width: 850px){ .stats-grid{grid-template-columns:1fr;} }

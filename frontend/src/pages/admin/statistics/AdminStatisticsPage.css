@@ -1,0 +1,6 @@
+.admin-statistics-page { display:grid; gap:12px; }
+.admin-statistics-page h1 { margin:0; }
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.stats-grid article { border:1px solid #dbe3ef; background:#fff; border-radius:14px; padding:12px; display:grid; gap:6px; }
+.stats-grid span { color:#64748b; font-size:.84rem; }
+@media (max-width: 850px){ .stats-grid{grid-template-columns:1fr;} }

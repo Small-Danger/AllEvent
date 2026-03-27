@@ -1,0 +1,6 @@
+.admin-dashboard-page { display:grid; gap:12px; }
+.admin-dashboard-page h1 { margin:0; }
+.admin-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.admin-kpi-grid article { border:1px solid #dbe3ef; background:#fff; border-radius:14px; padding:12px; display:grid; gap:6px; }
+.admin-kpi-grid span { color:#64748b; font-size:.84rem; }
+@media (max-width: 900px){ .admin-kpi-grid { grid-template-columns:1fr; } }

@@ -1,0 +1,8 @@
+.admin-users-page { display:grid; gap:12px; }
+.admin-users-page h1 { margin:0; }
+.admin-list { display:grid; gap:10px; }
+.admin-row { display:flex; justify-content:space-between; gap:8px; align-items:center; border:1px solid #dbe3ef; background:#fff; border-radius:14px; padding:12px; }
+.admin-row h2 { margin:0; font-size:1rem; }
+.admin-row p { margin:4px 0 0; color:#64748b; text-transform:capitalize; }
+.admin-row-actions { display:flex; gap:8px; align-items:center; text-transform:capitalize; }
+.admin-row-actions button { border:1px solid #dbe3ef; border-radius:8px; padding:7px 9px; background:#fff; cursor:pointer; font-weight:700; }
