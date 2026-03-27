@@ -1,0 +1,268 @@
+.public-shell {
+  min-height: 100vh;
+  background: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+}
+
+.public-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #dbe3ef;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+}
+
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #1e293b;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.brand-link img {
+  width: 38px;
+  height: 38px;
+}
+
+.public-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.public-nav a {
+  color: #1e293b;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-btn {
+  border: 1px solid #d0d9e6;
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.header-btn.secondary {
+  background: #fff;
+  color: #1e293b;
+}
+
+.header-btn.primary {
+  background: linear-gradient(135deg, #1e293b, #2563eb);
+  color: #f8fafc;
+  border-color: transparent;
+}
+
+.public-content {
+  flex: 1;
+}
+
+.mobile-tabbar {
+  display: none;
+}
+
+.public-footer {
+  margin-top: auto;
+  background: #0f172a;
+  color: #cbd5e1;
+  padding: 28px 24px;
+}
+
+.public-footer-grid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.public-footer h4 {
+  margin: 0 0 8px;
+  color: #f8fafc;
+}
+
+.public-footer p,
+.public-footer a {
+  margin: 0;
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+.footer-links {
+  display: grid;
+  gap: 6px;
+}
+
+.footer-bottom {
+  max-width: 1180px;
+  margin: 16px auto 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(203, 213, 225, 0.2);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 980px) {
+  .public-header {
+    padding: 12px;
+    flex-wrap: wrap;
+  }
+
+  .public-nav {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .public-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .public-header {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    z-index: 80;
+    padding: 10px;
+    border: 1px solid #dbe3ef;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+    gap: 8px;
+  }
+
+  .brand-link {
+    font-size: 0.95rem;
+    gap: 8px;
+  }
+
+  .brand-link img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .public-nav {
+    order: 3;
+    width: 100%;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 2px 0 0;
+  }
+
+  .public-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .public-nav a {
+    white-space: nowrap;
+    font-size: 0.8rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 6px 10px;
+  }
+
+  .header-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .header-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px 8px;
+    font-size: 0.76rem;
+    border-radius: 10px;
+  }
+
+  .public-content {
+    padding-top: 146px;
+    padding-bottom: calc(94px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-tabbar {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 80;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    background: #ffffff;
+    border: 1px solid #dbe3ef;
+    border-radius: 14px;
+    padding: 8px 6px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+  }
+
+  .mobile-tabbar a {
+    text-decoration: none;
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 0.73rem;
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 8px;
+  }
+
+  .mobile-tabbar a:hover {
+    background: #eef2ff;
+  }
+
+  .public-footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-footer {
+    padding: 24px 12px calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 390px) {
+  .public-header {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .brand-link {
+    font-size: 0.88rem;
+  }
+
+  .public-nav a {
+    font-size: 0.74rem;
+    padding: 5px 9px;
+  }
+
+  .header-btn {
+    font-size: 0.71rem;
+    padding: 7px 6px;
+  }
+
+  .public-content {
+    padding-top: 136px;
+  }
+}
