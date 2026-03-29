@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { clientProfile, favoritesSeed, reservationsSeed } from '../clientMockData'
+import { clientApi } from '../../../services/clientApi'
 import './ClientDashboardPage.css'
 
 function formatAmount(value) {
@@ -7,8 +9,40 @@ function formatAmount(value) {
 }
 
 export function ClientDashboardPage() {
-  const upcoming = reservationsSeed.filter((item) => item.status === 'upcoming')
-  const completed = reservationsSeed.filter((item) => item.status === 'done')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [profile, setProfile] = useState(clientProfile)
+  const [reservations, setReservations] = useState(reservationsSeed)
+  const [favorites, setFavorites] = useState(favoritesSeed)
+
+  useEffect(() => {
+    let active = true
+    clientApi
+      .getDashboardData()
+      .then((data) => {
+        if (!active) return
+        setProfile((current) => ({
+          ...current,
+          firstName: data.profile?.prenom || current.firstName,
+          avatar: data.profile?.avatar || current.avatar,
+        }))
+        setReservations(data.reservations.length ? data.reservations : reservationsSeed)
+        setFavorites(data.favorites.length ? data.favorites : favoritesSeed)
+      })
+      .catch((apiError) => {
+        if (!active) return
+        setError(apiError.message)
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const upcoming = reservations.filter((item) => item.status === 'upcoming')
+  const completed = reservations.filter((item) => item.status === 'done')
   const totalSpent = completed.reduce((sum, current) => sum + current.amount, 0)
 
   return (
@@ -16,7 +50,7 @@ export function ClientDashboardPage() {
       <header className="client-hero-card">
         <div>
           <p className="client-kicker">Espace client</p>
-          <h1>Bonjour {clientProfile.firstName}, pret(e) pour votre prochaine experience ?</h1>
+          <h1>Bonjour {profile.firstName}, pret(e) pour votre prochaine experience ?</h1>
           <p>
             Retrouvez vos reservations, messages et paiements en un seul endroit.
           </p>
@@ -29,8 +63,11 @@ export function ClientDashboardPage() {
             </Link>
           </div>
         </div>
-        <img src={clientProfile.avatar} alt={clientProfile.firstName} />
+        <img src={profile.avatar} alt={profile.firstName} />
       </header>
+
+      {isLoading && <div className="state-card">Chargement des donnees client...</div>}
+      {error && <div className="state-card">{error}</div>}
 
       <div className="client-kpi-grid">
         <article className="client-kpi-card">
@@ -39,7 +76,7 @@ export function ClientDashboardPage() {
         </article>
         <article className="client-kpi-card">
           <span>Favoris sauvegardes</span>
-          <strong>{favoritesSeed.length}</strong>
+          <strong>{favorites.length}</strong>
         </article>
         <article className="client-kpi-card">
           <span>Budget depense</span>

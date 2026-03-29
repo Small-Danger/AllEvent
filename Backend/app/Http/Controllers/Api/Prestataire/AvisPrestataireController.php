@@ -19,7 +19,11 @@ class AvisPrestataireController extends Controller
 
         $avis = Avis::query()
             ->whereHas('activite', fn ($q) => $q->whereIn('prestataire_id', $prestataireIds))
-            ->with(['user:id,name', 'activite:id,titre'])
+            ->with([
+                'user:id,name,email',
+                'activite:id,titre,ville_id',
+                'activite.ville:id,nom',
+            ])
             ->latest()
             ->paginate(30);
 
@@ -34,14 +38,28 @@ class AvisPrestataireController extends Controller
         }
 
         $payload = $request->validate([
-            'reponse_prestataire' => ['required', 'string', 'max:5000'],
+            'reponse_prestataire' => ['nullable', 'string', 'max:5000'],
         ]);
 
-        $avis->update([
-            'reponse_prestataire' => $payload['reponse_prestataire'],
-            'repondu_le' => now(),
-        ]);
+        $texte = trim((string) ($payload['reponse_prestataire'] ?? ''));
+        if ($texte === '') {
+            $avis->update([
+                'reponse_prestataire' => null,
+                'repondu_le' => null,
+            ]);
+        } else {
+            $avis->update([
+                'reponse_prestataire' => $texte,
+                'repondu_le' => now(),
+            ]);
+        }
 
-        return response()->json($avis->fresh());
+        return response()->json(
+            $avis->fresh()->load([
+                'user:id,name,email',
+                'activite:id,titre,ville_id',
+                'activite.ville:id,nom',
+            ])
+        );
     }
 }

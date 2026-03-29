@@ -1,7 +1,0 @@
-.pro-revenue-page { display:grid; gap:12px; }
-.pro-revenue-page h1 { margin:0; }
-.pro-card-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
-.revenue-row { background:#fff; border:1px solid #dbe3ef; border-radius:14px; padding:12px; }
-.revenue-row h2 { margin:0 0 8px; font-size:1rem; }
-.revenue-row p { margin:3px 0; color:#475569; }
-.revenue-row strong { display:block; margin-top:8px; }

@@ -19,7 +19,21 @@ class ReservationPrestataireController extends Controller
 
         $reservations = Reservation::query()
             ->whereHas('lignes.creneau.activite', fn ($q) => $q->whereIn('prestataire_id', $prestataireIds))
-            ->with(['user:id,name,email', 'lignes.creneau.activite:id,titre,prestataire_id', 'paiement'])
+            ->with([
+                'user:id,name,email',
+                'promotion:id,libelle,code',
+                'paiement:id,reservation_id,montant,statut,devise,paye_le',
+                'lignes' => fn ($q) => $q->select(
+                    'id',
+                    'reservation_id',
+                    'creneau_id',
+                    'quantite',
+                    'prix_unitaire_snapshot'
+                ),
+                'lignes.creneau:id,activite_id,debut_at,fin_at',
+                'lignes.creneau.activite:id,titre,ville_id,prestataire_id',
+                'lignes.creneau.activite.ville:id,nom',
+            ])
             ->latest()
             ->paginate(30);
 
@@ -41,6 +55,23 @@ class ReservationPrestataireController extends Controller
         ]);
 
         $reservation->update(['statut' => $payload['statut']]);
-        return response()->json($reservation->fresh());
+
+        return response()->json(
+            $reservation->fresh()->load([
+                'user:id,name,email',
+                'promotion:id,libelle,code',
+                'paiement:id,reservation_id,montant,statut,devise,paye_le',
+                'lignes' => fn ($q) => $q->select(
+                    'id',
+                    'reservation_id',
+                    'creneau_id',
+                    'quantite',
+                    'prix_unitaire_snapshot'
+                ),
+                'lignes.creneau:id,activite_id,debut_at,fin_at',
+                'lignes.creneau.activite:id,titre,ville_id,prestataire_id',
+                'lignes.creneau.activite.ville:id,nom',
+            ])
+        );
     }
 }

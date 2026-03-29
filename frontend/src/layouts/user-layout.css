@@ -65,6 +65,16 @@
   border-color: transparent;
 }
 
+.user-logout-btn {
+  border: 1px solid #dbe3ef;
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .user-content {
   padding: 24px;
   max-width: 1200px;
@@ -93,6 +103,11 @@
 
   .user-nav {
     display: none;
+  }
+
+  .user-logout-btn {
+    padding: 7px 9px;
+    font-size: 0.76rem;
   }
 
   .user-content {

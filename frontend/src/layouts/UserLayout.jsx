@@ -1,8 +1,11 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import logoAllevent from '../assets/brand/logo-allevent.png'
+import { useAuth } from '../context/useAuth'
 import './user-layout.css'
 
 export function UserLayout() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
   const links = [
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/reservations', label: 'Reservations' },
@@ -12,6 +15,11 @@ export function UserLayout() {
     { to: '/reviews', label: 'Avis' },
     { to: '/profile', label: 'Profil' },
   ]
+
+  const onLogout = async () => {
+    await logout()
+    navigate('/', { replace: true })
+  }
 
   return (
     <div className="user-shell">
@@ -34,6 +42,9 @@ export function UserLayout() {
             </NavLink>
           ))}
         </nav>
+        <button type="button" className="user-logout-btn" onClick={onLogout}>
+          Deconnexion
+        </button>
       </header>
 
       <main className="user-content">

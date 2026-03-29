@@ -5,9 +5,42 @@ export const proProfile = {
 }
 
 export const proActivitiesSeed = [
-  { id: 'ACT-1', title: 'Quad Sunset', city: 'Kribi', price: 45000, status: 'published', seats: 12 },
-  { id: 'ACT-2', title: 'Safari Urbain', city: 'Douala', price: 30000, status: 'draft', seats: 20 },
-  { id: 'ACT-3', title: 'Randonnee Premium', city: 'Bafoussam', price: 38000, status: 'published', seats: 15 },
+  {
+    id: 'ACT-1',
+    title: 'Quad Sunset',
+    city: 'Kribi',
+    price: 45000,
+    status: 'published',
+    seats: 12,
+    category: 'Loisir',
+    coverUrl: 'https://picsum.photos/seed/allevent-a1/400/250',
+    mediasCount: 1,
+    creneauxCount: 0,
+  },
+  {
+    id: 'ACT-2',
+    title: 'Safari Urbain',
+    city: 'Douala',
+    price: 30000,
+    status: 'draft',
+    seats: 20,
+    category: 'Loisir',
+    coverUrl: 'https://picsum.photos/seed/allevent-a2/400/250',
+    mediasCount: 1,
+    creneauxCount: 0,
+  },
+  {
+    id: 'ACT-3',
+    title: 'Randonnee Premium',
+    city: 'Bafoussam',
+    price: 38000,
+    status: 'published',
+    seats: 15,
+    category: 'Nature',
+    coverUrl: 'https://picsum.photos/seed/allevent-a3/400/250',
+    mediasCount: 1,
+    creneauxCount: 0,
+  },
 ]
 
 export const proReservationsSeed = [

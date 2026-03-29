@@ -1091,6 +1091,16 @@
   background: #fff;
 }
 
+.auth-feedback {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.auth-feedback.error {
+  color: #b91c1c;
+}
+
 .auth-links {
   margin-top: 12px;
   display: grid;

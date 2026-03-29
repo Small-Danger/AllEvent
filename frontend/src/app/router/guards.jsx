@@ -23,9 +23,7 @@ function getDemoRoleBypass(location) {
     '/prestataire/reviews',
     '/prestataire/statistics',
     '/prestataire/ads',
-    '/prestataire/revenue',
     '/prestataire/settings',
-    '/prestataire/suggestions',
   ]
   const adminPaths = [
     '/admin/dashboard',
@@ -51,6 +49,10 @@ export function RequireAuth() {
   const { auth } = useAuth()
   const location = useLocation()
 
+  if (auth.isLoading) {
+    return null
+  }
+
   if (getDemoRoleBypass(location)) {
     return <Outlet />
   }
@@ -65,6 +67,10 @@ export function RequireAuth() {
 export function RequireRole({ allowedRoles }) {
   const { auth } = useAuth()
   const location = useLocation()
+
+  if (auth.isLoading) {
+    return null
+  }
 
   const demoRoleBypass = getDemoRoleBypass(location)
   if (demoRoleBypass && allowedRoles.includes(demoRoleBypass)) {

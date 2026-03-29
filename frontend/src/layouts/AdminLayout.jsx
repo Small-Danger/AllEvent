@@ -1,8 +1,11 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import logoAllevent from '../assets/brand/logo-allevent.png'
+import { useAuth } from '../context/useAuth'
 import './admin-layout.css'
 
 export function AdminLayout() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
   const links = [
     { to: '/admin/dashboard', label: 'Dashboard' },
     { to: '/admin/users', label: 'Users' },
@@ -16,6 +19,11 @@ export function AdminLayout() {
     { to: '/admin/statistics', label: 'Stats' },
     { to: '/admin/notifications', label: 'Notifications' },
   ]
+
+  const onLogout = async () => {
+    await logout()
+    navigate('/', { replace: true })
+  }
 
   return (
     <div className="admin-shell">
@@ -37,6 +45,9 @@ export function AdminLayout() {
             </NavLink>
           ))}
         </nav>
+        <button type="button" className="admin-logout-btn" onClick={onLogout}>
+          Deconnexion
+        </button>
       </header>
       <main className="admin-content">
         <Outlet />

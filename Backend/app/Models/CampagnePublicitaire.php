@@ -17,6 +17,7 @@ class CampagnePublicitaire extends Model
     protected $fillable = [
         'prestataire_id',
         'titre',
+        'image_url',
         'emplacement',
         'ville_id',
         'categorie_id',
@@ -34,6 +35,14 @@ class CampagnePublicitaire extends Model
             'debut_at' => 'datetime',
             'fin_at' => 'datetime',
             'budget_montant' => 'decimal:2',
+            // Tolérance données: certaines bases seed/anciennes peuvent contenir des IDs non numériques
+            // (ex: "ACT-1") alors que `activites.id` est en bigint.
+            // Le cast PHP en integer rend ces valeurs incompatibles en `0`, ce qui fait que la relation `activite`
+            // ne peut plus provoquer une erreur SQL lors du chargement.
+            'activite_id' => 'integer',
+            'ville_id' => 'integer',
+            'categorie_id' => 'integer',
+            'priorite' => 'integer',
         ];
     }
 

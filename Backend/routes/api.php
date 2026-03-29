@@ -136,9 +136,16 @@ Route::prefix('prestataire')
         Route::put('/promotions/{promotion}', [GestionPromotionController::class, 'update']);
 
         // Campagnes publicitaires.
+        // Alias sans "publicites" dans l’URL : certains bloqueurs de pub / politiques bloquent ces requêtes (net::ERR_BLOCKED_BY_ADMINISTRATOR).
+        Route::get('/mise-en-avant/campagnes', [GestionCampagnePublicitaireController::class, 'index']);
+        Route::post('/mise-en-avant/campagnes', [GestionCampagnePublicitaireController::class, 'store']);
+        Route::match(['put', 'post'], '/mise-en-avant/campagnes/{campagne}', [GestionCampagnePublicitaireController::class, 'update']);
+        Route::delete('/mise-en-avant/campagnes/{campagne}', [GestionCampagnePublicitaireController::class, 'destroy']);
+        Route::post('/mise-en-avant/campagnes/{campagne}/paiement/simuler', [GestionCampagnePublicitaireController::class, 'simulerPaiement']);
+
         Route::get('/publicites/campagnes', [GestionCampagnePublicitaireController::class, 'index']);
         Route::post('/publicites/campagnes', [GestionCampagnePublicitaireController::class, 'store']);
-        Route::put('/publicites/campagnes/{campagne}', [GestionCampagnePublicitaireController::class, 'update']);
+        Route::match(['put', 'post'], '/publicites/campagnes/{campagne}', [GestionCampagnePublicitaireController::class, 'update']);
         Route::delete('/publicites/campagnes/{campagne}', [GestionCampagnePublicitaireController::class, 'destroy']);
         Route::post('/publicites/campagnes/{campagne}/paiement/simuler', [GestionCampagnePublicitaireController::class, 'simulerPaiement']);
 

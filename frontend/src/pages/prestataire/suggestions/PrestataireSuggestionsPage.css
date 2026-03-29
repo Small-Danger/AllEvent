@@ -1,9 +1,0 @@
-.pro-suggestions-page { display:grid; gap:12px; }
-.pro-suggestions-page h1 { margin:0; }
-.pro-inline-form { display:flex; gap:8px; }
-.pro-inline-form input { flex:1; border:1px solid #dbe3ef; border-radius:10px; padding:10px; }
-.pro-inline-form button { border:0; border-radius:10px; background:#166534; color:#fff; font-weight:700; padding:10px 12px; cursor:pointer; }
-.pro-card-list { display:grid; gap:10px; }
-.suggestion-row { background:#fff; border:1px solid #dbe3ef; border-radius:14px; padding:12px; display:flex; justify-content:space-between; gap:8px; align-items:center; }
-.suggestion-row p { margin:0; }
-.suggestion-row button { border:1px solid #dbe3ef; border-radius:8px; padding:7px 9px; background:#fff; font-weight:700; cursor:pointer; }

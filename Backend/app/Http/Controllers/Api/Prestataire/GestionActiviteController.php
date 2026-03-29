@@ -20,7 +20,8 @@ class GestionActiviteController extends Controller
 
         $activites = Activite::query()
             ->whereIn('prestataire_id', $prestataireIds)
-            ->with(['categorie:id,nom', 'ville:id,nom', 'lieu:id,nom'])
+            ->with(['categorie:id,nom', 'ville:id,nom', 'lieu:id,nom', 'medias:id,activite_id,url,ordre'])
+            ->withCount('creneaux')
             ->latest()
             ->paginate(20);
 

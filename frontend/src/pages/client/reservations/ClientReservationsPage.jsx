@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { reservationsSeed } from '../clientMockData'
+import { clientApi } from '../../../services/clientApi'
 import './ClientReservationsPage.css'
 
 const tabs = [
@@ -16,7 +17,28 @@ export function ClientReservationsPage() {
   const [selectedTab, setSelectedTab] = useState('upcoming')
   const [search, setSearch] = useState('')
   const [rows, setRows] = useState(reservationsSeed)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    clientApi
+      .getReservations()
+      .then((data) => {
+        if (!active) return
+        if (data.length) setRows(data)
+      })
+      .catch((apiError) => {
+        if (!active) return
+        setError(apiError.message)
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   const filteredRows = useMemo(
     () =>
@@ -28,15 +50,19 @@ export function ClientReservationsPage() {
     [rows, search, selectedTab],
   )
 
-  const cancelReservation = (id) => {
+  const cancelReservation = async (id) => {
     setIsLoading(true)
-    window.setTimeout(() => {
+    try {
+      await clientApi.cancelReservation(id)
       setRows((current) =>
         current.map((row) => (row.id === id ? { ...row, status: 'cancelled' } : row)),
       )
-      setIsLoading(false)
       setSelectedTab('cancelled')
-    }, 500)
+    } catch (apiError) {
+      setError(apiError.message)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -68,6 +94,7 @@ export function ClientReservationsPage() {
       </div>
 
       {isLoading && <div className="state-card">Mise a jour en cours...</div>}
+      {!isLoading && error && <div className="state-card">{error}</div>}
 
       {!isLoading && filteredRows.length === 0 && (
         <div className="state-card">Aucune reservation dans cette categorie.</div>

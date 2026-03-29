@@ -1,7 +1,14 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import logoAllevent from '../../assets/brand/logo-allevent.png'
+import { useAuth } from '../../context/useAuth'
 import './public.css'
+
+function resolveHomeByRole(role) {
+  if (role === 'admin') return '/admin/dashboard'
+  if (role === 'prestataire') return '/prestataire/dashboard'
+  return '/dashboard'
+}
 
 export function LandingPage() {
   const heroSlides = useMemo(
@@ -745,8 +752,30 @@ export function BecomePrestatairePage() {
 }
 
 export function LoginPage() {
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const visualImage =
     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80'
+
+  const onSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+    setIsSubmitting(true)
+    try {
+      const user = await login(form)
+      const fallback = resolveHomeByRole(user.role)
+      const redirectTarget = location.state?.from?.pathname || fallback
+      navigate(redirectTarget, { replace: true })
+    } catch (loginError) {
+      setError(loginError.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <main className="auth-page">
@@ -754,11 +783,28 @@ export function LoginPage() {
         <div className="auth-card">
           <h1>Connexion</h1>
           <p>Connecte-toi pour gerer tes reservations et favoris.</p>
-          <form className="auth-form">
-            <input type="email" placeholder="Email" />
-            <input type="password" placeholder="Mot de passe" />
-            <button className="btn btn-primary" type="button">
-              Se connecter
+          <form className="auth-form" onSubmit={onSubmit}>
+            <input
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, email: event.target.value }))
+              }
+              required
+            />
+            <input
+              type="password"
+              placeholder="Mot de passe"
+              value={form.password}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, password: event.target.value }))
+              }
+              required
+            />
+            {error && <p className="auth-feedback error">{error}</p>}
+            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
           <div className="auth-links">
@@ -781,8 +827,38 @@ export function LoginPage() {
 }
 
 export function RegisterPage() {
+  const { register } = useAuth()
+  const navigate = useNavigate()
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    passwordConfirmation: '',
+  })
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const visualImage =
     'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
+
+  const onSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+
+    if (form.password !== form.passwordConfirmation) {
+      setError('Les mots de passe ne correspondent pas.')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const user = await register(form)
+      navigate(resolveHomeByRole(user.role), { replace: true })
+    } catch (registerError) {
+      setError(registerError.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <main className="auth-page">
@@ -790,12 +866,49 @@ export function RegisterPage() {
         <div className="auth-card">
           <h1>Inscription</h1>
           <p>Rejoins ALL EVENT pour reserver et suivre tes activites.</p>
-          <form className="auth-form">
-            <input type="text" placeholder="Nom complet" />
-            <input type="email" placeholder="Email" />
-            <input type="password" placeholder="Mot de passe" />
-            <button className="btn btn-primary" type="button">
-              Creer mon compte
+          <form className="auth-form" onSubmit={onSubmit}>
+            <input
+              type="text"
+              placeholder="Nom complet"
+              value={form.name}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, name: event.target.value }))
+              }
+              required
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, email: event.target.value }))
+              }
+              required
+            />
+            <input
+              type="password"
+              placeholder="Mot de passe"
+              value={form.password}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, password: event.target.value }))
+              }
+              required
+            />
+            <input
+              type="password"
+              placeholder="Confirmation mot de passe"
+              value={form.passwordConfirmation}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  passwordConfirmation: event.target.value,
+                }))
+              }
+              required
+            />
+            {error && <p className="auth-feedback error">{error}</p>}
+            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creation...' : 'Creer mon compte'}
             </button>
           </form>
           <div className="auth-links">

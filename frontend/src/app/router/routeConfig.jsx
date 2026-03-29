@@ -30,11 +30,8 @@ import {
   PrestataireAvailabilityPage,
   PrestataireReservationsPage,
   PrestataireReviewsPage,
-  PrestataireStatisticsPage,
   PrestataireAdsPage,
-  PrestataireRevenuePage,
   PrestataireSettingsPage,
-  PrestataireSuggestionsPage,
 } from '../../pages/prestataire/PrestatairePages'
 import {
   AdminLoginPage,
@@ -101,11 +98,12 @@ export const appRoutes = [
               { path: 'availability', element: <PrestataireAvailabilityPage /> },
               { path: 'reservations', element: <PrestataireReservationsPage /> },
               { path: 'reviews', element: <PrestataireReviewsPage /> },
-              { path: 'statistics', element: <PrestataireStatisticsPage /> },
+              {
+                path: 'statistics',
+                element: <Navigate to="/prestataire/dashboard?tab=analyses" replace />,
+              },
               { path: 'ads', element: <PrestataireAdsPage /> },
-              { path: 'revenue', element: <PrestataireRevenuePage /> },
               { path: 'settings', element: <PrestataireSettingsPage /> },
-              { path: 'suggestions', element: <PrestataireSuggestionsPage /> },
             ],
           },
         ],

@@ -1,11 +1,33 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { clientProfile } from '../clientMockData'
+import { clientApi } from '../../../services/clientApi'
 import './ClientProfilePage.css'
 
 export function ClientProfilePage() {
   const [form, setForm] = useState(clientProfile)
-  const [isSaving, setIsSaving] = useState(false)
+  const [isSaving, setIsSaving] = useState(true)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    clientApi
+      .getProfile()
+      .then((profile) => {
+        if (!active) return
+        setForm((current) => ({ ...current, ...profile }))
+      })
+      .catch((apiError) => {
+        if (!active) return
+        setError(apiError.message)
+      })
+      .finally(() => {
+        if (active) setIsSaving(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   const onFieldChange = (event) => {
     const { name, value } = event.target
@@ -15,11 +37,19 @@ export function ClientProfilePage() {
 
   const onSave = (event) => {
     event.preventDefault()
+    setError('')
     setIsSaving(true)
-    window.setTimeout(() => {
+    clientApi
+      .updateProfile(form)
+      .then(() => {
+        setSaved(true)
+      })
+      .catch((apiError) => {
+        setError(apiError.message)
+      })
+      .finally(() => {
       setIsSaving(false)
-      setSaved(true)
-    }, 600)
+      })
   }
 
   return (
@@ -65,9 +95,10 @@ export function ClientProfilePage() {
 
         <div className="profile-actions">
           <button type="submit" disabled={isSaving}>
-            {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
+            {isSaving ? 'Chargement/Sauvegarde...' : 'Sauvegarder'}
           </button>
           {saved && <span>Profil mis a jour avec succes.</span>}
+          {error && <span className="profile-error">{error}</span>}
         </div>
       </form>
     </section>
