@@ -55,6 +55,8 @@ class MediaActivitePrestataireController extends Controller
             'cloudinary_public_id' => $publicId,
         ]);
 
+        $activite->refresh()->repasserEnRevalidationSiPubliee();
+
         return response()->json($media, 201);
     }
 
@@ -69,6 +71,8 @@ class MediaActivitePrestataireController extends Controller
             app(CloudinaryService::class)->destroyImage($media->cloudinary_public_id);
         }
         $media->delete();
+        $activite->refresh()->repasserEnRevalidationSiPubliee();
+
         return response()->json(['message' => 'Media supprime.']);
     }
 }

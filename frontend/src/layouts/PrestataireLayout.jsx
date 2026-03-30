@@ -26,7 +26,7 @@ export function PrestataireLayout() {
 
   useEffect(() => {
     let active = true
-    Promise.all([prestataireApi.getReservations(), prestataireApi.getReviews()])
+    Promise.all([prestataireApi.getReservations(), prestataireApi.getReviews({ page: 1 })])
       .then(([reservations, reviews]) => {
         if (!active) return
         const rows = []
@@ -38,7 +38,8 @@ export function PrestataireLayout() {
             label: `Reservation ${r.customer || 'client'} - ${r.activity || 'activite'}`,
             href: '/prestataire/reservations',
           }))
-        const pendingReviews = (reviews || [])
+        const reviewRows = reviews?.items ?? []
+        const pendingReviews = reviewRows
           .filter((r) => !r.replied)
           .slice(0, 2)
           .map((r) => ({

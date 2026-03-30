@@ -78,6 +78,17 @@ class Activite extends Model
         return $this->hasMany(CampagnePublicitaire::class);
     }
 
+    /**
+     * Si l'activite etait visible catalogue, toute evolution des medias impose une nouvelle validation admin.
+     */
+    public function repasserEnRevalidationSiPubliee(): void
+    {
+        if ($this->statut !== 'publiee') {
+            return;
+        }
+        $this->forceFill(['statut' => 'en_attente_validation'])->save();
+    }
+
     public function promotions(): HasMany
     {
         return $this->hasMany(Promotion::class);

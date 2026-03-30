@@ -6,9 +6,21 @@ import { PrestataireGreenBand } from '../../../layouts/PrestataireGreenBand'
 import './PrestataireActivitiesPage.css'
 
 const STATUT_OPTIONS = [
-  { value: 'brouillon', label: 'Brouillon' },
-  { value: 'publiee', label: 'Publiee' },
+  { value: 'brouillon', label: 'Brouillon (non visible catalogue)' },
+  { value: 'en_attente_validation', label: 'Soumettre pour validation admin' },
 ]
+
+function activityStatusLabel(status) {
+  if (status === 'published') return 'Publiée (catalogue)'
+  if (status === 'pending_review') return 'En attente validation'
+  return 'Brouillon'
+}
+
+function activityStatusClass(status) {
+  if (status === 'published') return 'activity-status published'
+  if (status === 'pending_review') return 'activity-status pending_review'
+  return 'activity-status draft'
+}
 
 function looksLikeCloudinaryOrUploadError(message) {
   if (!message || typeof message !== 'string') return false
@@ -30,7 +42,13 @@ function normalizeSeed(rows) {
     mediasCount: row.mediasCount ?? 0,
     creneauxCount: row.creneauxCount ?? 0,
     prestataireId: row.prestataireId ?? null,
-    rawStatus: row.rawStatus ?? (row.status === 'published' ? 'publiee' : 'brouillon'),
+    rawStatus:
+      row.rawStatus ??
+      (row.status === 'published'
+        ? 'publiee'
+        : row.status === 'pending_review'
+          ? 'en_attente_validation'
+          : 'brouillon'),
   }))
 }
 
@@ -242,13 +260,14 @@ export function PrestataireActivitiesPage() {
     try {
       const data = await prestataireApi.getActivityDetails(id)
       setEditDetail(data)
+      const st = data.statut || 'brouillon'
       setEditForm({
         categorie_id: String(data.categorie_id ?? ''),
         ville_id: String(data.ville_id ?? ''),
         titre: data.titre || '',
         description: data.description || '',
         prix_base: String(data.prix_base ?? ''),
-        statut: data.statut || 'brouillon',
+        statut: st === 'en_attente_validation' ? 'en_attente_validation' : 'brouillon',
       })
     } catch (apiError) {
       setError(apiError.message)
@@ -271,14 +290,17 @@ export function PrestataireActivitiesPage() {
       return
     }
     try {
-      await prestataireApi.updateActivity(editActivityId, {
+      const payload = {
         categorie_id: cid,
         ville_id: vid,
         titre,
         description: editForm.description.trim() || null,
         prix_base: prix,
-        statut: editForm.statut,
-      })
+      }
+      if (editDetail?.statut !== 'publiee') {
+        payload.statut = editForm.statut
+      }
+      await prestataireApi.updateActivity(editActivityId, payload)
       for (let i = 0; i < editNewFiles.length; i += 1) {
         await prestataireApi.uploadActivityMedia(editActivityId, editNewFiles[i], 100 + i)
       }
@@ -313,22 +335,15 @@ export function PrestataireActivitiesPage() {
     }
   }
 
-  const toggleStatus = async (id) => {
-    const target = activities.find((row) => row.id === id)
-    if (!target) return
-    const nextStatus = target.status === 'published' ? 'brouillon' : 'publiee'
+  const patchActivityStatut = async (id, statut) => {
     try {
-      await prestataireApi.updateActivity(id, { statut: nextStatus })
-      setActivities((rows) =>
-        rows.map((row) =>
-          row.id === id
-            ? { ...row, status: nextStatus === 'publiee' ? 'published' : 'draft', rawStatus: nextStatus }
-            : row,
-        ),
-      )
-      showFlash(
-        nextStatus === 'publiee' ? 'Statut : publiee.' : 'Statut : brouillon.',
-      )
+      await prestataireApi.updateActivity(id, { statut })
+      await syncActivitiesFromApi()
+      if (statut === 'en_attente_validation') {
+        showFlash('Demande envoyée. Un administrateur validera la mise en ligne du catalogue.')
+      } else {
+        showFlash('Statut mis à jour : brouillon.')
+      }
     } catch (apiError) {
       const msg = apiError.message
       setError(msg)
@@ -365,7 +380,7 @@ export function PrestataireActivitiesPage() {
       <PrestataireGreenBand
         kicker="Catalogue"
         title="Activites"
-        subtitle="Chaque fiche est liee a votre prestataire, une categorie, une ville et un prix — aligne sur la base de donnees et l'app mobile."
+        subtitle="Vous enregistrez en brouillon ou soumettez pour validation ; seul un administrateur peut publier sur le catalogue public. Une fiche déjà en ligne repasse en validation si vous modifiez le contenu ou les médias."
         action={
           <button type="button" className="prestataire-green-band-cta" onClick={openCreate}>
             + Nouvelle activite
@@ -391,12 +406,16 @@ export function PrestataireActivitiesPage() {
           <strong>{activities.length}</strong>
         </article>
         <article>
-          <span>Publiees</span>
+          <span>En ligne (catalogue)</span>
           <strong>{activities.filter((item) => item.status === 'published').length}</strong>
         </article>
         <article>
+          <span>En attente validation</span>
+          <strong>{activities.filter((item) => item.status === 'pending_review').length}</strong>
+        </article>
+        <article>
           <span>Brouillons</span>
-          <strong>{activities.filter((item) => item.status !== 'published').length}</strong>
+          <strong>{activities.filter((item) => item.status === 'draft').length}</strong>
         </article>
       </div>
 
@@ -415,9 +434,7 @@ export function PrestataireActivitiesPage() {
                   {item.title?.slice(0, 1)?.toUpperCase() || '?'}
                 </div>
               )}
-              <span className={item.status === 'published' ? 'activity-status published' : 'activity-status draft'}>
-                {item.status === 'published' ? 'Publiee' : 'Brouillon'}
-              </span>
+              <span className={activityStatusClass(item.status)}>{activityStatusLabel(item.status)}</span>
             </div>
             <div className="activity-card-body">
               <p className="activity-card-category">{item.category}</p>
@@ -439,9 +456,21 @@ export function PrestataireActivitiesPage() {
                 <button type="button" className="btn-secondary" onClick={() => openEdit(item.id)}>
                   Modifier
                 </button>
-                <button type="button" onClick={() => toggleStatus(item.id)}>
-                  {item.status === 'published' ? 'Mettre en brouillon' : 'Publier'}
-                </button>
+                {item.status === 'draft' ? (
+                  <button type="button" onClick={() => patchActivityStatut(item.id, 'en_attente_validation')}>
+                    Soumettre pour validation
+                  </button>
+                ) : null}
+                {item.status === 'pending_review' ? (
+                  <button type="button" className="btn-secondary" onClick={() => patchActivityStatut(item.id, 'brouillon')}>
+                    Retirer la demande (brouillon)
+                  </button>
+                ) : null}
+                {item.status === 'published' ? (
+                  <button type="button" className="btn-secondary" onClick={() => patchActivityStatut(item.id, 'en_attente_validation')}>
+                    Demander une revalidation
+                  </button>
+                ) : null}
                 <button type="button" className="danger" onClick={() => setDeleteCandidate(item)}>
                   Supprimer
                 </button>
@@ -577,7 +606,7 @@ export function PrestataireActivitiesPage() {
                     />
                   </label>
                   <label>
-                    Statut
+                    Publication
                     <select
                       value={createForm.statut}
                       onChange={(e) => setCreateForm((f) => ({ ...f, statut: e.target.value }))}
@@ -592,8 +621,8 @@ export function PrestataireActivitiesPage() {
                 </fieldset>
 
                 <p className="form-note">
-                  Le champ lieu precis (`lieu_id`) est optionnel cote API ; vous pouvez l’ajouter plus tard si votre equipe
-                  expose une liste de lieux.
+                  Vous ne pouvez pas publier seul sur le catalogue : choisissez une soumission pour validation ou laissez en
+                  brouillon. Le champ lieu précis (`lieu_id`) reste optionnel côté API.
                 </p>
 
                 <div className="modal-actions">
@@ -633,6 +662,21 @@ export function PrestataireActivitiesPage() {
                     <p className="detail-desc">{detailData.description || 'Pas de description.'}</p>
                     <p className="detail-price">
                       {Number(detailData.prix_base || 0).toLocaleString('fr-FR')} XAF
+                    </p>
+                    <p className="detail-statut-pill">
+                      <span className={activityStatusClass(
+                        detailData.statut === 'publiee'
+                          ? 'published'
+                          : detailData.statut === 'en_attente_validation'
+                            ? 'pending_review'
+                            : 'draft',
+                      )}>
+                        {detailData.statut === 'publiee'
+                          ? 'Publiée — visible catalogue'
+                          : detailData.statut === 'en_attente_validation'
+                            ? 'En attente de validation admin'
+                            : 'Brouillon'}
+                      </span>
                     </p>
                   </div>
                   <div className="detail-gallery">
@@ -706,6 +750,13 @@ export function PrestataireActivitiesPage() {
                     </select>
                   </label>
                 </fieldset>
+                {editDetail?.statut === 'publiee' ? (
+                  <p className="form-note form-note--highlight">
+                    Cette activité est <strong>en ligne</strong> sur le catalogue. Si vous modifiez le contenu ci-dessous ou
+                    les images, elle repassera en <strong>attente de validation</strong> après enregistrement (règle
+                    serveur). Vous pouvez aussi demander une revalidation depuis la carte, sans modifier la fiche.
+                  </p>
+                ) : null}
                 <fieldset className="form-section">
                   <legend>Contenu</legend>
                   <label>
@@ -734,19 +785,21 @@ export function PrestataireActivitiesPage() {
                       required
                     />
                   </label>
-                  <label>
-                    Statut
-                    <select
-                      value={editForm.statut}
-                      onChange={(e) => setEditForm((f) => ({ ...f, statut: e.target.value }))}
-                    >
-                      {STATUT_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  {editDetail?.statut !== 'publiee' ? (
+                    <label>
+                      Statut
+                      <select
+                        value={editForm.statut}
+                        onChange={(e) => setEditForm((f) => ({ ...f, statut: e.target.value }))}
+                      >
+                        {STATUT_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                 </fieldset>
 
                 <fieldset className="form-section">

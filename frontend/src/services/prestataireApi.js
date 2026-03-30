@@ -239,7 +239,12 @@ export const prestataireApi = {
       villeId: item.ville_id,
       lieuId: item.lieu_id ?? null,
       price: Number(item?.prix_base || 0),
-      status: item?.statut === 'publiee' ? 'published' : 'draft',
+      status:
+        item?.statut === 'publiee'
+          ? 'published'
+          : item?.statut === 'en_attente_validation'
+            ? 'pending_review'
+            : 'draft',
       seats: item?.capacite_totale ?? '-',
       rawStatus: item?.statut,
       prestataireId: item?.prestataire_id,
@@ -356,11 +361,16 @@ export const prestataireApi = {
     }
   },
 
-  async getReviews() {
-    const payload = await request('/prestataire/avis')
-    return asList(payload)
-      .map((item) => prestataireApi.mapReviewFromApi(item))
-      .filter(Boolean)
+  async getReviews(params = {}) {
+    const page = params.page ?? 1
+    const payload = await request(`/prestataire/avis?page=${page}`)
+    const rows = Array.isArray(payload?.data) ? payload.data : asList(payload)
+    return {
+      items: rows.map((item) => prestataireApi.mapReviewFromApi(item)).filter(Boolean),
+      current_page: payload.current_page ?? 1,
+      last_page: payload.last_page ?? 1,
+      total: payload.total ?? rows.length,
+    }
   },
 
   async replyToReview(reviewId, reponsePrestataire) {
@@ -465,5 +475,31 @@ export const prestataireApi = {
       request('/public/villes'),
     ])
     return { categories: asList(categories), villes: asList(villes) }
+  },
+
+  /** Pièces de vérification (PDF / images) pour validation admin. */
+  async getVerificationDocuments(prestataireId) {
+    const payload = await request(`/prestataire/profil/${prestataireId}/documents`)
+    return Array.isArray(payload) ? payload : []
+  },
+
+  async uploadVerificationDocument(prestataireId, file, libelle) {
+    const body = new FormData()
+    body.append('fichier', file)
+    if (libelle != null && String(libelle).trim() !== '') {
+      body.append('libelle', String(libelle).trim())
+    }
+    const raw = await requestFormData(
+      `/prestataire/profil/${prestataireId}/documents`,
+      body,
+      'POST',
+    )
+    return unwrapEntity(raw)
+  },
+
+  async deleteVerificationDocument(prestataireId, documentId) {
+    return request(`/prestataire/profil/${prestataireId}/documents/${documentId}`, {
+      method: 'DELETE',
+    })
   },
 }

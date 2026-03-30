@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\GestionIdentifiantBloqueAdminController;
+use App\Http\Controllers\Api\Admin\GestionPrestataireDocumentController;
 use App\Http\Controllers\Api\Admin\GestionPrestataireController;
 use App\Http\Controllers\Api\Admin\GestionPubliciteAdminController;
 use App\Http\Controllers\Api\Admin\GestionUtilisateurAdminController;
@@ -25,6 +27,7 @@ use App\Http\Controllers\Api\Prestataire\GestionCampagnePublicitaireController;
 use App\Http\Controllers\Api\Prestataire\GestionPromotionController;
 use App\Http\Controllers\Api\Prestataire\StatistiquePrestataireController;
 use App\Http\Controllers\Api\Prestataire\ProfilPrestataireController;
+use App\Http\Controllers\Api\Prestataire\PrestataireDocumentController;
 use App\Http\Controllers\Api\Prestataire\ReservationPrestataireController;
 use App\Http\Controllers\Api\Prestataire\AvisPrestataireController;
 use App\Http\Controllers\Api\Prestataire\MediaActivitePrestataireController;
@@ -119,6 +122,10 @@ Route::prefix('prestataire')
         Route::post('/profil/{prestataire}/soumettre', [ProfilPrestataireController::class, 'soumettreValidation']);
         Route::get('/profil/{prestataire}/statut', [ProfilPrestataireController::class, 'statut']);
 
+        Route::get('/profil/{prestataire}/documents', [PrestataireDocumentController::class, 'index']);
+        Route::post('/profil/{prestataire}/documents', [PrestataireDocumentController::class, 'store']);
+        Route::delete('/profil/{prestataire}/documents/{document}', [PrestataireDocumentController::class, 'destroy']);
+
         // Activites et creneaux.
         Route::get('/activites', [GestionActiviteController::class, 'index']);
         Route::post('/activites', [GestionActiviteController::class, 'store']);
@@ -170,12 +177,18 @@ Route::prefix('admin')
         // Prestataires.
         Route::get('/prestataires', [GestionPrestataireController::class, 'index']);
         Route::patch('/prestataires/{prestataire}/statut', [GestionPrestataireController::class, 'updateStatut']);
+        Route::get('/prestataires/{prestataire}/documents', [GestionPrestataireDocumentController::class, 'index']);
+        Route::get('/prestataires/{prestataire}/documents/{document}/telecharger', [GestionPrestataireDocumentController::class, 'telecharger']);
+        Route::get('/prestataires/{prestataire}', [GestionPrestataireController::class, 'show']);
 
         // Comptes utilisateurs.
         Route::get('/utilisateurs', [GestionUtilisateurAdminController::class, 'index']);
+        Route::post('/utilisateurs/{user}/bloquer', [GestionUtilisateurAdminController::class, 'bloquer']);
         Route::get('/utilisateurs/{user}', [GestionUtilisateurAdminController::class, 'show']);
-        Route::patch('/utilisateurs/{user}', [GestionUtilisateurAdminController::class, 'update']);
-        Route::delete('/utilisateurs/{user}', [GestionUtilisateurAdminController::class, 'destroy']);
+
+        // Identifiants bloques (apres blocage compte) — levée en cas d'exception.
+        Route::get('/identifiants-bloques', [GestionIdentifiantBloqueAdminController::class, 'index']);
+        Route::delete('/identifiants-bloques/{identifiantBloque}', [GestionIdentifiantBloqueAdminController::class, 'destroy']);
 
         // Commissions et remboursements.
         Route::get('/commissions/regles', [GestionCommissionAdminController::class, 'regles']);
@@ -199,6 +212,14 @@ Route::prefix('admin')
         Route::delete('/publicites/campagnes/{campagne}', [GestionPubliciteAdminController::class, 'deleteCampagne']);
         Route::get('/publicites/paiements', [GestionPubliciteAdminController::class, 'paiementsPublicite']);
 
+        // Alias anti-filtre reseau/navigateur (certaines policies bloquent "publicites").
+        Route::post('/annonces/campagnes', [GestionPubliciteAdminController::class, 'storeCampagne']);
+        Route::get('/annonces/campagnes', [GestionPubliciteAdminController::class, 'campagnes']);
+        Route::patch('/annonces/campagnes/{campagne}', [GestionPubliciteAdminController::class, 'updateCampagne']);
+        Route::patch('/annonces/campagnes/{campagne}/statut', [GestionPubliciteAdminController::class, 'updateStatutCampagne']);
+        Route::delete('/annonces/campagnes/{campagne}', [GestionPubliciteAdminController::class, 'deleteCampagne']);
+        Route::get('/annonces/paiements', [GestionPubliciteAdminController::class, 'paiementsPublicite']);
+
         // Litiges.
         Route::post('/litiges', [GestionLitigeAdminController::class, 'store']);
         Route::get('/litiges', [GestionLitigeAdminController::class, 'index']);
@@ -219,6 +240,7 @@ Route::prefix('admin')
         Route::delete('/contenu/villes/{ville}', [ContenuAdminController::class, 'deleteVille']);
 
         Route::get('/contenu/activites', [ContenuAdminController::class, 'activites']);
+        Route::get('/contenu/activites/{activite}', [ContenuAdminController::class, 'showActivite']);
         Route::patch('/contenu/activites/{activite}', [ContenuAdminController::class, 'updateActivite']);
         Route::delete('/contenu/activites/{activite}', [ContenuAdminController::class, 'deleteActivite']);
 
@@ -227,5 +249,10 @@ Route::prefix('admin')
         Route::get('/notifications/logs', [NotificationAdminController::class, 'logs']);
 
         Route::get('/statistiques/dashboard', [StatistiqueAdminController::class, 'dashboard']);
+        Route::get('/statistiques/executive', [StatistiqueAdminController::class, 'executive']);
+        Route::get('/statistiques/marketplace', [StatistiqueAdminController::class, 'marketplace']);
+        Route::get('/statistiques/demand', [StatistiqueAdminController::class, 'demand']);
+        Route::get('/statistiques/risk', [StatistiqueAdminController::class, 'risk']);
+        Route::get('/statistiques/data-products', [StatistiqueAdminController::class, 'dataProducts']);
         Route::get('/statistiques/export', [StatistiqueAdminController::class, 'export']);
     });

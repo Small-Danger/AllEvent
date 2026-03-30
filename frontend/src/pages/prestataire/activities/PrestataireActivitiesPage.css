@@ -58,7 +58,7 @@
 
 .activities-kpis {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
 }
 
@@ -147,6 +147,11 @@
 .activity-status.draft {
   background: #f1f5f9;
   color: #475569;
+}
+
+.activity-status.pending_review {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .activity-card-body {
@@ -409,6 +414,15 @@
   line-height: 1.4;
 }
 
+.form-note--highlight {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #14532d;
+  margin-bottom: 4px;
+}
+
 .modal-actions {
   display: flex;
   gap: 10px;
@@ -460,6 +474,18 @@
   font-weight: 800;
   font-size: 1.1rem;
   color: #166534;
+}
+
+.detail-statut-pill {
+  margin: 10px 0 0;
+}
+
+.detail-statut-pill .activity-status {
+  position: static;
+  display: inline-block;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.78rem;
 }
 
 .detail-gallery {

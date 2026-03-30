@@ -37,7 +37,7 @@ class GestionActiviteController extends Controller
             'lieu_id' => ['nullable', 'integer', 'exists:lieux,id'],
             'titre' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'statut' => ['nullable', 'string', 'max:32'],
+            'statut' => ['nullable', 'string', 'in:brouillon,en_attente_validation'],
             'prix_base' => ['required', 'numeric', 'min:0'],
         ]);
 
@@ -46,7 +46,9 @@ class GestionActiviteController extends Controller
             return response()->json(['message' => 'Ce prestataire ne vous appartient pas.'], 403);
         }
 
-        $payload['statut'] = $payload['statut'] ?? 'brouillon';
+        $payload['statut'] = in_array($payload['statut'] ?? 'brouillon', ['brouillon', 'en_attente_validation'], true)
+            ? ($payload['statut'] ?? 'brouillon')
+            : 'brouillon';
         $activite = Activite::create($payload);
 
         return response()->json($activite, 201);
@@ -74,11 +76,27 @@ class GestionActiviteController extends Controller
             'lieu_id' => ['nullable', 'integer', 'exists:lieux,id'],
             'titre' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'statut' => ['sometimes', 'string', 'max:32'],
+            'statut' => ['sometimes', 'string', 'in:brouillon,en_attente_validation'],
             'prix_base' => ['sometimes', 'numeric', 'min:0'],
         ]);
 
-        $activite->update($payload);
+        $statutFromRequest = $payload['statut'] ?? null;
+        unset($payload['statut']);
+
+        $wasPubliee = $activite->statut === 'publiee';
+        $contentFields = ['titre', 'description', 'prix_base', 'categorie_id', 'ville_id', 'lieu_id'];
+        $contentChanged = count(array_intersect(array_keys($payload), $contentFields)) > 0;
+
+        if ($payload !== []) {
+            $activite->update($payload);
+        }
+
+        if ($statutFromRequest !== null) {
+            $activite->update(['statut' => $statutFromRequest]);
+        } elseif ($wasPubliee && $contentChanged) {
+            $activite->update(['statut' => 'en_attente_validation']);
+        }
+
         return response()->json($activite->fresh());
     }
 

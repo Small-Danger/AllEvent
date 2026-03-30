@@ -10,25 +10,46 @@ use Illuminate\Http\Request;
 
 /**
  * Supervision admin des prestataires.
- * Endpoints: listing et validation/rejet de statut.
+ * Endpoints: listing, fiche, validation ou rejet du statut metier.
  */
 class GestionPrestataireController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Prestataire::query()->latest()->paginate(30));
+        $query = Prestataire::query()
+            ->withCount(['activites', 'users'])
+            ->latest();
+
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->string('statut'));
+        }
+
+        return response()->json($query->paginate(30));
+    }
+
+    public function show(Prestataire $prestataire): JsonResponse
+    {
+        $prestataire->loadCount('activites');
+        $prestataire->load([
+            'users:id,name,email',
+            'documents.uploadedBy:id,name,email',
+        ]);
+
+        return response()->json($prestataire);
     }
 
     public function updateStatut(Request $request, Prestataire $prestataire): JsonResponse
     {
         $payload = $request->validate([
-            'statut' => ['required', 'string', 'max:32'],
+            'statut' => ['required', 'string', 'in:en_attente_validation,valide,rejete'],
         ]);
 
         $prestataire->update([
             'statut' => $payload['statut'],
             'valide_le' => $payload['statut'] === 'valide' ? now() : null,
         ]);
+
+        $prestataire->load('users');
 
         foreach ($prestataire->users as $user) {
             JournalNotification::create([

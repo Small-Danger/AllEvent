@@ -28,18 +28,26 @@ export function PrestataireReviewsPage() {
   const { showFlash } = usePrestataireFlash()
   const { pathname } = useLocation()
   const [reviews, setReviews] = useState([])
+  const [page, setPage] = useState(1)
+  const [listMeta, setListMeta] = useState({ current_page: 1, last_page: 1, total: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('all')
   const [replyingId, setReplyingId] = useState(null)
   const [replyText, setReplyText] = useState('')
 
-  const loadReviews = () => {
+  const loadReviews = (pageNum = page) => {
     setLoading(true)
     return prestataireApi
-      .getReviews()
-      .then((rows) => {
-        setReviews(Array.isArray(rows) ? rows : [])
+      .getReviews({ page: pageNum })
+      .then((res) => {
+        setReviews(Array.isArray(res.items) ? res.items : [])
+        setListMeta({
+          current_page: res.current_page ?? 1,
+          last_page: res.last_page ?? 1,
+          total: res.total ?? 0,
+        })
+        setPage(res.current_page ?? pageNum)
         setError('')
       })
       .catch((apiError) => {
@@ -50,11 +58,17 @@ export function PrestataireReviewsPage() {
 
   useEffect(() => {
     let active = true
+    setPage(1)
     prestataireApi
-      .getReviews()
-      .then((rows) => {
+      .getReviews({ page: 1 })
+      .then((res) => {
         if (!active) return
-        setReviews(Array.isArray(rows) ? rows : [])
+        setReviews(Array.isArray(res.items) ? res.items : [])
+        setListMeta({
+          current_page: res.current_page ?? 1,
+          last_page: res.last_page ?? 1,
+          total: res.total ?? 0,
+        })
         setError('')
       })
       .catch((apiError) => {
@@ -137,7 +151,7 @@ export function PrestataireReviewsPage() {
       <PrestataireGreenBand
         kicker="Réputation"
         title="Avis clients"
-        subtitle="Chaque ligne correspond à la table avis : note, commentaire, statut de modération, réponse officielle du prestataire. Les 30 derniers avis (pagination API)."
+        subtitle="Chaque ligne correspond à la table avis : note, commentaire, statut de modération, réponse officielle du prestataire. Liste paginée (30 par page) via l’API."
         action={false}
       />
 
@@ -167,12 +181,16 @@ export function PrestataireReviewsPage() {
 
       <div className="rev-kpi-grid" aria-live="polite">
         <article className="rev-kpi">
-          <span className="rev-kpi-label">Avis (page)</span>
+          <span className="rev-kpi-label">Sur cette page</span>
           <strong className="rev-kpi-value">{kpis.total}</strong>
         </article>
         <article className="rev-kpi rev-kpi--accent">
-          <span className="rev-kpi-label">Note moyenne</span>
+          <span className="rev-kpi-label">Note moy. (page)</span>
           <strong className="rev-kpi-value">{kpis.avg != null ? `${kpis.avg} / 5` : '—'}</strong>
+        </article>
+        <article className="rev-kpi">
+          <span className="rev-kpi-label">Total avis</span>
+          <strong className="rev-kpi-value">{listMeta.total}</strong>
         </article>
         <article className="rev-kpi">
           <span className="rev-kpi-label">Avec réponse</span>
@@ -214,7 +232,7 @@ export function PrestataireReviewsPage() {
           <p className="rev-empty-text">
             Aucun avis ne correspond à ce filtre, ou vous n’avez pas encore de retours clients sur vos activités.
           </p>
-          <button type="button" className="rev-empty-cta" onClick={() => loadReviews()}>
+          <button type="button" className="rev-empty-cta" onClick={() => loadReviews(1)}>
             Actualiser
           </button>
         </article>
@@ -310,6 +328,30 @@ export function PrestataireReviewsPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {!loading && listMeta.last_page > 1 && (
+        <div className="rev-pager">
+          <button
+            type="button"
+            className="rev-pager-btn"
+            disabled={page <= 1}
+            onClick={() => loadReviews(Math.max(1, page - 1))}
+          >
+            Précédent
+          </button>
+          <span className="rev-pager-info">
+            Page {listMeta.current_page} / {listMeta.last_page}
+          </span>
+          <button
+            type="button"
+            className="rev-pager-btn"
+            disabled={page >= listMeta.last_page}
+            onClick={() => loadReviews(page + 1)}
+          >
+            Suivant
+          </button>
+        </div>
       )}
     </section>
   )

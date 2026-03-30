@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\IdentifiantBloque;
 use App\Models\Profil;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 /**
@@ -23,11 +25,31 @@ class AuthController extends Controller
     {
         $donnees = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email'),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (IdentifiantBloque::emailEstBloque((string) $value)) {
+                        $fail('Cette adresse e-mail ne peut plus etre utilisee pour une inscription.');
+                    }
+                },
+            ],
             'password' => ['required', 'confirmed', Password::defaults()],
             'prenom' => ['nullable', 'string', 'max:255'],
             'nom' => ['nullable', 'string', 'max:255'],
-            'telephone' => ['nullable', 'string', 'max:32'],
+            'telephone' => [
+                'nullable',
+                'string',
+                'max:32',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value !== null && $value !== '' && IdentifiantBloque::telephoneEstBloque((string) $value)) {
+                        $fail('Ce numero de telephone ne peut plus etre utilise pour une inscription.');
+                    }
+                },
+            ],
         ]);
 
         $user = User::create([

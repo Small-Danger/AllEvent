@@ -40,12 +40,9 @@ import {
   AdminPrestatairesPage,
   AdminActivitiesPage,
   AdminReviewsPage,
-  AdminReportsPage,
   AdminAdsPage,
   AdminCommissionsPage,
-  AdminDisputesPage,
   AdminStatisticsPage,
-  AdminNotificationsPage,
 } from '../../pages/admin/AdminPages'
 import { RequireAuth, RequireRole } from './guards'
 
@@ -120,12 +117,15 @@ export const appRoutes = [
               { path: 'prestataires', element: <AdminPrestatairesPage /> },
               { path: 'activities', element: <AdminActivitiesPage /> },
               { path: 'reviews', element: <AdminReviewsPage /> },
-              { path: 'reports', element: <AdminReportsPage /> },
+              {
+                path: 'reports',
+                element: <Navigate to="/admin/reviews?tab=signalements" replace />,
+              },
               { path: 'ads', element: <AdminAdsPage /> },
               { path: 'commissions', element: <AdminCommissionsPage /> },
-              { path: 'disputes', element: <AdminDisputesPage /> },
+              { path: 'disputes', element: <Navigate to="/admin/reviews?tab=litiges" replace /> },
               { path: 'statistics', element: <AdminStatisticsPage /> },
-              { path: 'notifications', element: <AdminNotificationsPage /> },
+              { path: 'notifications', element: <Navigate to="/admin/dashboard" replace /> },
             ],
           },
         ],

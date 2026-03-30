@@ -152,7 +152,7 @@ export function AdminDashboardPage() {
             <span className="admin-kpi-hint">prestataires.statut = en_attente_validation</span>
           </NavLink>
           <NavLink
-            to="/admin/reports"
+            to="/admin/reviews?tab=signalements"
             className={`admin-kpi-card admin-kpi-card--alert ${
               stats.signalements_en_attente > 0 ? 'admin-kpi-card--pulse' : ''
             } ${isLoading ? 'admin-kpi-card--skeleton' : ''}`}
@@ -164,7 +164,7 @@ export function AdminDashboardPage() {
             <span className="admin-kpi-hint">signalements_avis en file modération</span>
           </NavLink>
           <NavLink
-            to="/admin/disputes"
+            to="/admin/reviews?tab=litiges"
             className={`admin-kpi-card admin-kpi-card--alert ${
               stats.litiges_actifs > 0 ? 'admin-kpi-card--pulse' : ''
             } ${isLoading ? 'admin-kpi-card--skeleton' : ''}`}

@@ -22,7 +22,7 @@ export const proActivitiesSeed = [
     title: 'Safari Urbain',
     city: 'Douala',
     price: 30000,
-    status: 'draft',
+    status: 'pending_review',
     seats: 20,
     category: 'Loisir',
     coverUrl: 'https://picsum.photos/seed/allevent-a2/400/250',

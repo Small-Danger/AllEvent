@@ -80,7 +80,7 @@
 
 .rev-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
 }
 
@@ -144,6 +144,37 @@
   color: #fff;
   border-color: transparent;
   box-shadow: 0 6px 16px rgba(20, 83, 45, 0.22);
+}
+
+.rev-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 16px 0 8px;
+}
+
+.rev-pager-btn {
+  border: 1px solid var(--rv-border);
+  border-radius: 10px;
+  padding: 9px 18px;
+  background: var(--rv-card);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #334155;
+}
+
+.rev-pager-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.rev-pager-info {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #64748b;
 }
 
 .rev-skeleton-wrap {

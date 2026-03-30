@@ -76,4 +76,9 @@ class Prestataire extends Model
     {
         return $this->hasMany(Litige::class);
     }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(PrestataireDocument::class);
+    }
 }

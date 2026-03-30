@@ -84,14 +84,32 @@ class ContenuAdminController extends Controller
         return response()->json(['message' => 'Ville supprimee.']);
     }
 
-    public function activites(): JsonResponse
+    public function activites(Request $request): JsonResponse
     {
-        return response()->json(
-            Activite::query()
-                ->with(['prestataire:id,nom', 'categorie:id,nom', 'ville:id,nom'])
-                ->latest()
-                ->paginate(30)
-        );
+        $query = Activite::query()
+            ->with(['prestataire:id,nom', 'categorie:id,nom', 'ville:id,nom'])
+            ->withCount(['creneaux', 'medias'])
+            ->latest();
+
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->string('statut'));
+        }
+
+        return response()->json($query->paginate(30));
+    }
+
+    public function showActivite(Activite $activite): JsonResponse
+    {
+        $activite->loadCount(['creneaux', 'medias']);
+        $activite->load([
+            'prestataire:id,nom,statut',
+            'categorie:id,nom',
+            'ville:id,nom',
+            'lieu:id,nom',
+            'medias' => fn ($q) => $q->select('id', 'activite_id', 'url', 'ordre')->orderBy('ordre'),
+        ]);
+
+        return response()->json($activite);
     }
 
     public function updateActivite(Request $request, Activite $activite): JsonResponse
@@ -99,13 +117,13 @@ class ContenuAdminController extends Controller
         $payload = $request->validate([
             'titre' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'statut' => ['sometimes', 'string', 'max:32'],
+            'statut' => ['sometimes', 'string', 'in:brouillon,publiee,en_attente_validation'],
             'prix_base' => ['sometimes', 'numeric', 'min:0'],
             'categorie_id' => ['sometimes', 'integer', 'exists:categories,id'],
             'ville_id' => ['sometimes', 'integer', 'exists:villes,id'],
         ]);
         $activite->update($payload);
-        return response()->json($activite->fresh());
+        return response()->json($activite->fresh()->load(['prestataire:id,nom', 'categorie:id,nom', 'ville:id,nom']));
     }
 
     public function deleteActivite(Activite $activite): JsonResponse

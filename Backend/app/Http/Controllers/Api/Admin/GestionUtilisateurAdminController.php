@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\IdentifiantBloque;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Administration des comptes utilisateurs.
- * Endpoints: lister, consulter, modifier et supprimer les comptes.
+ * Lecture seule + blocage definitif (suppression + liste d'identifiants interdits).
  */
 class GestionUtilisateurAdminController extends Controller
 {
@@ -33,22 +34,60 @@ class GestionUtilisateurAdminController extends Controller
         return response()->json($user->load(['profil', 'prestataires']));
     }
 
-    public function update(Request $request, User $user): JsonResponse
+    /**
+     * Supprime le compte et enregistre email (et telephone profil si present)
+     * comme non reutilisables pour une future inscription.
+     */
+    public function bloquer(Request $request, User $user): JsonResponse
     {
-        $payload = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'role' => ['sometimes', 'string', 'in:admin,client,prestataire'],
-            'status' => ['sometimes', 'string', 'in:active,inactive,suspendu'],
+        $admin = $request->user();
+        if ($user->id === $admin->id) {
+            return response()->json([
+                'message' => 'Vous ne pouvez pas bloquer votre propre compte administrateur.',
+            ], 403);
+        }
+
+        if ($user->role === 'admin') {
+            $admins = User::query()->where('role', 'admin')->count();
+            if ($admins <= 1) {
+                return response()->json([
+                    'message' => 'Impossible de supprimer le dernier compte administrateur.',
+                ], 422);
+            }
+        }
+
+        $user->load('profil');
+
+        DB::transaction(function () use ($user, $admin): void {
+            $email = IdentifiantBloque::normaliserEmail($user->email);
+            IdentifiantBloque::query()->firstOrCreate(
+                [
+                    'type' => 'email',
+                    'valeur' => $email,
+                ],
+                [
+                    'bloque_par_user_id' => $admin->id,
+                ],
+            );
+
+            $tel = IdentifiantBloque::normaliserTelephone($user->profil?->telephone);
+            if ($tel !== null) {
+                IdentifiantBloque::query()->firstOrCreate(
+                    [
+                        'type' => 'telephone',
+                        'valeur' => $tel,
+                    ],
+                    [
+                        'bloque_par_user_id' => $admin->id,
+                    ],
+                );
+            }
+
+            $user->delete();
+        });
+
+        return response()->json([
+            'message' => 'Compte supprime et identifiants bloques pour toute reinscription.',
         ]);
-
-        $user->update($payload);
-        return response()->json($user->fresh()->load('profil'));
-    }
-
-    public function destroy(User $user): JsonResponse
-    {
-        $user->delete();
-        return response()->json(['message' => 'Compte supprime.']);
     }
 }

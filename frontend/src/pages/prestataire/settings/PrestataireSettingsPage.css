@@ -11,4 +11,86 @@
 .settings-card button { justify-self:start; border:0; border-radius:10px; background:#166534; color:#fff; font-weight:700; padding:10px 12px; cursor:pointer; }
 .settings-card span { color:#166534; font-weight:700; font-size:.9rem; }
 .settings-actions { display:flex; justify-content:flex-end; }
-@media (max-width: 760px){ .settings-grid { grid-template-columns:1fr; } }
+.settings-error { color: #b91c1c; font-weight: 600; margin: 0; }
+.settings-saved { color: #166534; font-weight: 700; font-size: 0.9rem; }
+.settings-muted { color: #64748b; font-size: 0.9rem; margin: 0; }
+
+.settings-card--docs {
+  margin-top: 8px;
+}
+
+.settings-doc-lead {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.settings-doc-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.settings-doc-libelle input,
+.settings-doc-file input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-doc-file input[type='file'] {
+  padding: 8px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.settings-doc-list-title {
+  margin: 18px 0 8px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.settings-doc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.settings-doc-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.settings-doc-row strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.settings-doc-delete {
+  border: 1px solid #fecaca !important;
+  background: #fff5f5 !important;
+  color: #991b1b !important;
+}
+
+.settings-doc-delete:hover:not(:disabled) {
+  background: #fee2e2 !important;
+}
+
+@media (max-width: 760px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

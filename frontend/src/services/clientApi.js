@@ -42,13 +42,28 @@ function statusToUi(status, dateString) {
 }
 
 export function mapReservationToUi(reservation) {
-  const line = reservation?.lignes?.[0]
+  const lignes = Array.isArray(reservation?.lignes) ? reservation.lignes : []
+  const line = lignes[0]
   const creneau = line?.creneau
-  const activite = creneau?.activite
+  let activite = creneau?.activite
+  let latestFinMs = null
+  for (const l of lignes) {
+    const cr = l?.creneau
+    if (cr?.activite && !activite) activite = cr.activite
+    const fin = cr?.fin_at
+    if (fin) {
+      const t = new Date(fin).getTime()
+      if (!Number.isNaN(t) && (latestFinMs == null || t > latestFinMs)) latestFinMs = t
+    }
+  }
+  if (!activite && creneau?.activite) activite = creneau.activite
   const dateTime = creneau?.debut_at || reservation?.created_at
   const date = dateTime ? new Date(dateTime).toISOString().slice(0, 10) : '-'
   const hour = dateTime ? new Date(dateTime).toISOString().slice(11, 16) : '--:--'
   const amount = Number(reservation?.paiement?.montant || 0)
+  const crenauxEnded = latestFinMs != null && latestFinMs < Date.now()
+  const canLeaveReview =
+    reservation?.statut === 'payee' && crenauxEnded && Boolean(activite?.id)
 
   return {
     id: reservation.id,
@@ -61,6 +76,7 @@ export function mapReservationToUi(reservation) {
     amount,
     status: statusToUi(reservation?.statut, dateTime),
     backendStatus: reservation?.statut,
+    canLeaveReview,
   }
 }
 
@@ -143,17 +159,31 @@ export const clientApi = {
     })
   },
 
-  async getReviews() {
-    const payload = await request('/client/avis')
-    return asList(payload).map((item) => ({
+  mapReviewFromApi(item) {
+    if (!item || typeof item !== 'object') return null
+    return {
       id: item.id,
-      reservationId: item.reservation_id || item?.reservation?.id,
-      activity: item?.activite?.titre || 'Activite',
+      reservationId: item.reservation_id ?? item?.reservation?.id,
+      activity: item?.activite?.titre || 'Activité',
       score: Number(item?.note || 0),
-      date: item?.created_at?.slice(0, 10) || '-',
+      date: item?.created_at?.slice(0, 10) || '—',
       text: item?.commentaire || '',
-      activityId: item?.activite_id || item?.activite?.id,
-    }))
+      activityId: item?.activite_id ?? item?.activite?.id,
+      statut: item?.statut || 'visible',
+    }
+  },
+
+  /** Liste paginée GET /client/avis */
+  async getReviews(params = {}) {
+    const page = params.page ?? 1
+    const payload = await request(`/client/avis?page=${page}`)
+    const rows = Array.isArray(payload?.data) ? payload.data : asList(payload)
+    return {
+      items: rows.map((item) => clientApi.mapReviewFromApi(item)).filter(Boolean),
+      current_page: payload.current_page ?? 1,
+      last_page: payload.last_page ?? 1,
+      total: payload.total ?? rows.length,
+    }
   },
 
   async createReview({ reservationId, activityId, score, text }) {
@@ -163,7 +193,17 @@ export const clientApi = {
         reservation_id: Number(reservationId),
         activite_id: Number(activityId),
         note: Number(score),
-        commentaire: text,
+        commentaire: text?.trim() ? text.trim() : null,
+      }),
+    })
+  },
+
+  async reportReview(reviewId, { motif, details }) {
+    await request(`/client/avis/${reviewId}/signalements`, {
+      method: 'POST',
+      body: JSON.stringify({
+        motif,
+        details: details?.trim() ? details.trim() : null,
       }),
     })
   },
