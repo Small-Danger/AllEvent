@@ -444,7 +444,7 @@ export function PrestataireActivitiesPage() {
                 {item.lieuName && <span className="dot">·</span>}
                 {item.lieuName && <span>{item.lieuName}</span>}
               </p>
-              <p className="activity-card-price">{Number(item.price || 0).toLocaleString('fr-FR')} XAF</p>
+              <p className="activity-card-price">{Number(item.price || 0).toLocaleString('fr-FR')} MAD</p>
               <div className="activity-card-stats">
                 <span>{item.mediasCount || 0} photo(s)</span>
                 <span>{item.creneauxCount ?? 0} creneau(x)</span>
@@ -595,7 +595,7 @@ export function PrestataireActivitiesPage() {
                     />
                   </label>
                   <label>
-                    Prix de base (XAF)
+                    Prix de base (MAD)
                     <input
                       type="number"
                       min="0"
@@ -661,7 +661,7 @@ export function PrestataireActivitiesPage() {
                     </p>
                     <p className="detail-desc">{detailData.description || 'Pas de description.'}</p>
                     <p className="detail-price">
-                      {Number(detailData.prix_base || 0).toLocaleString('fr-FR')} XAF
+                      {Number(detailData.prix_base || 0).toLocaleString('fr-FR')} MAD
                     </p>
                     <p className="detail-statut-pill">
                       <span className={activityStatusClass(
@@ -776,7 +776,7 @@ export function PrestataireActivitiesPage() {
                     />
                   </label>
                   <label>
-                    Prix de base (XAF)
+                    Prix de base (MAD)
                     <input
                       type="number"
                       min="0"

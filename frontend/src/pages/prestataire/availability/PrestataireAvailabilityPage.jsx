@@ -140,7 +140,7 @@ export function PrestataireAvailabilityPage() {
 
   const basePriceLabel = useMemo(() => {
     if (!selectedActivity) return null
-    return `${Number(selectedActivity.price || 0).toLocaleString('fr-FR')} XAF`
+    return `${Number(selectedActivity.price || 0).toLocaleString('fr-FR')} MAD`
   }, [selectedActivity])
 
   const slotsByDate = useMemo(() => {
@@ -415,7 +415,7 @@ export function PrestataireAvailabilityPage() {
               <span className="pick-body">
                 <strong>{activity.title}</strong>
                 <span className="pick-meta">
-                  {activity.city} · {Number(activity.price || 0).toLocaleString('fr-FR')} XAF
+                  {activity.city} · {Number(activity.price || 0).toLocaleString('fr-FR')} MAD
                 </span>
               </span>
             </button>
@@ -524,7 +524,7 @@ export function PrestataireAvailabilityPage() {
                       {slot.prixApplique != null ? (
                         <>
                           <span className="slot-price-label">Prix créneau</span>
-                          <span className="slot-price-value">{slot.prixApplique.toLocaleString('fr-FR')} XAF</span>
+                          <span className="slot-price-value">{slot.prixApplique.toLocaleString('fr-FR')} MAD</span>
                         </>
                       ) : (
                         <>
@@ -612,7 +612,7 @@ export function PrestataireAvailabilityPage() {
                 />
               </label>
               <label className="slot-form-field">
-                <span className="slot-form-label">Prix appliqué (XAF, optionnel)</span>
+                <span className="slot-form-label">Prix appliqué (MAD, optionnel)</span>
                 <input
                   type="number"
                   min="0"
@@ -702,7 +702,7 @@ export function PrestataireAvailabilityPage() {
                 </label>
               </div>
               <label className="slot-form-field">
-                <span className="slot-form-label">Prix appliqué (XAF)</span>
+                <span className="slot-form-label">Prix appliqué (MAD)</span>
                 <input
                   type="number"
                   min="0"

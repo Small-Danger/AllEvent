@@ -3,12 +3,20 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OtpActivationMail;
+use App\Mail\PrestataireUnderReviewMail;
+use App\Models\EmailOtp;
 use App\Models\IdentifiantBloque;
+use App\Models\Prestataire;
+use App\Models\PrestataireDocument;
+use App\Models\PrestataireMembre;
 use App\Models\Profil;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -57,7 +65,7 @@ class AuthController extends Controller
             'email' => $donnees['email'],
             'password' => $donnees['password'],
             'role' => 'client',
-            'status' => 'active',
+            'status' => 'inactive',
         ]);
 
         if ($request->filled('prenom') || $request->filled('nom') || $request->filled('telephone')) {
@@ -69,13 +77,16 @@ class AuthController extends Controller
             ]);
         }
 
-        $jeton = $user->createToken('auth')->plainTextToken;
+        [$otpCode] = $this->creerOtp($user);
+        Mail::to($user->email)->send(new OtpActivationMail($user, $otpCode));
 
         return response()->json([
-            'message' => 'Compte cree.',
-            'token' => $jeton,
-            'token_type' => 'Bearer',
-            'user' => $this->formaterUtilisateur($user->load('profil')),
+            'message' => 'Compte cree. Un code OTP a ete envoye par email pour activer votre compte.',
+            'otp_required' => true,
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+            ],
         ], 201);
     }
 
@@ -95,6 +106,13 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Identifiants invalides.',
             ], 422);
+        }
+
+        if ($user->email_verified_at === null) {
+            return response()->json([
+                'message' => 'Votre compte n est pas encore active. Entrez le code OTP recu par email.',
+                'otp_required' => true,
+            ], 403);
         }
 
         if ($user->status !== 'active') {
@@ -135,6 +153,154 @@ class AuthController extends Controller
         return response()->json($this->formaterUtilisateur($user));
     }
 
+    public function verifyOtp(Request $request): JsonResponse
+    {
+        $payload = $request->validate([
+            'email' => ['required', 'email'],
+            'otp' => ['required', 'digits:6'],
+        ]);
+
+        $user = User::query()->where('email', $payload['email'])->first();
+        if (! $user) {
+            return response()->json(['message' => 'Compte introuvable.'], 404);
+        }
+
+        $otp = EmailOtp::query()
+            ->where('user_id', $user->id)
+            ->whereNull('verified_at')
+            ->latest('id')
+            ->first();
+
+        if (! $otp) {
+            return response()->json(['message' => 'Aucun code OTP actif.'], 422);
+        }
+        if ($otp->attempts >= 5) {
+            return response()->json(['message' => 'Nombre de tentatives depasse. Demandez un nouveau code.'], 422);
+        }
+        if ($otp->expires_at->isPast()) {
+            return response()->json(['message' => 'Code OTP expire. Demandez un nouveau code.'], 422);
+        }
+        if (! Hash::check($payload['otp'], $otp->code_hash)) {
+            $otp->increment('attempts');
+            return response()->json(['message' => 'Code OTP invalide.'], 422);
+        }
+
+        $otp->update(['verified_at' => now()]);
+        $user->forceFill([
+            'email_verified_at' => now(),
+            'status' => 'active',
+        ])->save();
+
+        $user->tokens()->delete();
+        $token = $user->createToken('auth')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Compte active avec succes.',
+            'token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $this->formaterUtilisateur($user->load(['profil', 'prestataires'])),
+        ]);
+    }
+
+    public function resendOtp(Request $request): JsonResponse
+    {
+        $payload = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $user = User::query()->where('email', $payload['email'])->first();
+        if (! $user) {
+            return response()->json(['message' => 'Compte introuvable.'], 404);
+        }
+        if ($user->email_verified_at !== null) {
+            return response()->json(['message' => 'Ce compte est deja active.'], 422);
+        }
+
+        [$otpCode] = $this->creerOtp($user);
+        Mail::to($user->email)->send(new OtpActivationMail($user, $otpCode));
+
+        return response()->json(['message' => 'Nouveau code OTP envoye.']);
+    }
+
+    public function registerPrestataire(Request $request): JsonResponse
+    {
+        $payload = $request->validate([
+            'owner_name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email'),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (IdentifiantBloque::emailEstBloque((string) $value)) {
+                        $fail('Cette adresse e-mail ne peut plus etre utilisee pour une inscription.');
+                    }
+                },
+            ],
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'nom' => ['required', 'string', 'max:255'],
+            'raison_sociale' => ['required', 'string', 'max:255'],
+            'numero_fiscal' => ['required', 'string', 'max:255'],
+            'documents' => ['required', 'array', 'min:1', 'max:8'],
+            'documents.*' => ['required', 'file', 'max:10240', 'mimetypes:application/pdf,image/jpeg,image/png'],
+            'documents_libelles' => ['nullable', 'array'],
+            'documents_libelles.*' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user = null;
+        $prestataire = null;
+
+        DB::transaction(function () use ($request, $payload, &$user, &$prestataire): void {
+            $user = User::create([
+                'name' => $payload['owner_name'],
+                'email' => $payload['email'],
+                'password' => $payload['password'],
+                'role' => 'prestataire',
+                'status' => 'inactive',
+                'email_verified_at' => now(),
+            ]);
+
+            $prestataire = Prestataire::create([
+                'nom' => $payload['nom'],
+                'raison_sociale' => $payload['raison_sociale'],
+                'numero_fiscal' => $payload['numero_fiscal'],
+                'statut' => 'en_attente_validation',
+                'valide_le' => null,
+            ]);
+
+            PrestataireMembre::create([
+                'user_id' => $user->id,
+                'prestataire_id' => $prestataire->id,
+                'role_membre' => 'owner',
+                'rejoint_le' => now(),
+            ]);
+
+            $files = $request->file('documents', []);
+            $labels = $request->input('documents_libelles', []);
+            foreach ($files as $index => $file) {
+                $path = $file->store("prestataire-documents/{$prestataire->id}", 'local');
+                PrestataireDocument::create([
+                    'prestataire_id' => $prestataire->id,
+                    'uploaded_by_user_id' => $user->id,
+                    'libelle' => isset($labels[$index]) && trim((string) $labels[$index]) !== '' ? (string) $labels[$index] : null,
+                    'nom_original' => $file->getClientOriginalName(),
+                    'chemin_disque' => $path,
+                    'mime_type' => $file->getClientMimeType(),
+                    'taille_octets' => $file->getSize(),
+                ]);
+            }
+        });
+
+        Mail::to($user->email)->send(new PrestataireUnderReviewMail($prestataire));
+
+        return response()->json([
+            'message' => 'Demande prestataire recue. Notre equipe la verifiera sous 48h ouvrees.',
+            'prestataire_id' => $prestataire->id,
+            'status' => 'en_attente_validation',
+        ], 201);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -146,6 +312,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'role' => $user->role,
             'status' => $user->status,
+            'email_verified_at' => $user->email_verified_at,
             'profil' => $user->profil,
             'prestataires' => $user->prestataires->map(fn ($p) => [
                 'id' => $p->id,
@@ -156,5 +323,22 @@ class AuthController extends Controller
                 ],
             ]),
         ];
+    }
+
+    /**
+     * @return array{0:string}
+     */
+    private function creerOtp(User $user): array
+    {
+        $code = (string) random_int(100000, 999999);
+        EmailOtp::query()->create([
+            'user_id' => $user->id,
+            'code_hash' => Hash::make($code),
+            'expires_at' => now()->addMinutes(10),
+            'attempts' => 0,
+            'verified_at' => null,
+        ]);
+
+        return [$code];
     }
 }

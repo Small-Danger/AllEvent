@@ -4,7 +4,7 @@ import { adminApi } from '../../../services/adminApi'
 import './AdminDashboardPage.css'
 
 function money(value) {
-  return `${Number(value || 0).toLocaleString('fr-FR')} XAF`
+  return `${Number(value || 0).toLocaleString('fr-FR')} MAD`
 }
 
 function num(value) {

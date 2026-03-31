@@ -46,7 +46,9 @@ function normalizeMediasArray(medias) {
 function getHeaders() {
   const token = localStorage.getItem(TOKEN_STORAGE_KEY)
   return {
+    Accept: 'application/json',
     'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   }
 }
@@ -153,7 +155,7 @@ function mapReservationFromApi(item) {
     people: lignes.reduce((acc, l) => acc + Number(l.quantite || 0), 0),
     amount: Number(item?.montant_total || 0),
     montantReduction: item?.montant_reduction != null ? Number(item.montant_reduction) : null,
-    devise: item?.devise || 'XAF',
+    devise: item?.devise || 'MAD',
     promotion: item?.promotion
       ? { libelle: item.promotion.libelle, code: item.promotion.code }
       : null,
@@ -216,10 +218,23 @@ export const prestataireApi = {
     return asList(payload)
   },
 
+  async createProfile(data) {
+    return request('/prestataire/profil', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+
   async updateProfile(prestataireId, data) {
     return request(`/prestataire/profil/${prestataireId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
+    })
+  },
+
+  async submitProfileValidation(prestataireId) {
+    return request(`/prestataire/profil/${prestataireId}/soumettre`, {
+      method: 'POST',
     })
   },
 

@@ -89,6 +89,17 @@
   cursor: pointer;
 }
 
+.admin-presta-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 96px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  font: inherit;
+  resize: vertical;
+}
+
 .admin-presta-count {
   margin: 0;
   font-size: 0.88rem;
@@ -453,7 +464,7 @@
 }
 
 .admin-presta-modal {
-  max-width: 420px;
+  max-width: 520px;
   width: 100%;
   background: #fff;
   border-radius: 18px;

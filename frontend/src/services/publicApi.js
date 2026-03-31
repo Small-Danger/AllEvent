@@ -19,6 +19,22 @@ async function publicRequest(path, options = {}) {
   return payload
 }
 
+async function publicFormRequest(path, formData) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    body: formData,
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(payload?.message || 'Envoi de la demande impossible.')
+  }
+  return payload
+}
+
 function paginated(payload) {
   return {
     items: Array.isArray(payload?.data) ? payload.data : [],
@@ -108,5 +124,26 @@ export const publicApi = {
   async getVilles() {
     const rows = await publicRequest('/public/villes')
     return Array.isArray(rows) ? rows : []
+  },
+
+  async submitPrestataireApplication(payload) {
+    const body = new FormData()
+    body.append('owner_name', payload.ownerName)
+    body.append('email', payload.email)
+    body.append('password', payload.password)
+    body.append('password_confirmation', payload.passwordConfirmation)
+    body.append('nom', payload.businessName)
+    body.append('raison_sociale', payload.legalName)
+    body.append('numero_fiscal', payload.fiscalNumber)
+    ;(payload.documents || []).forEach((doc, idx) => {
+      body.append('documents[]', doc.file)
+      if (doc.label && String(doc.label).trim()) {
+        body.append('documents_libelles[]', String(doc.label).trim())
+      } else {
+        body.append('documents_libelles[]', '')
+      }
+      body.append(`_doc_idx_${idx}`, String(idx))
+    })
+    return publicFormRequest('/public/auth/prestataire/register', body)
   },
 }

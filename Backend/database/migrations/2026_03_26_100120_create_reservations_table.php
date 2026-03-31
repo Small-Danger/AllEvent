@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('panier_id')->nullable()->constrained('paniers')->nullOnDelete();
             $table->string('statut', 32)->default('en_attente_paiement');
             $table->decimal('montant_total', 10, 2);
-            $table->string('devise', 3)->default('XAF');
+            $table->string('devise', 3)->default('MAD');
             $table->timestamps();
 
             $table->index(['user_id', 'statut']);

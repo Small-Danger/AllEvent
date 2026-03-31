@@ -21,6 +21,7 @@ class Prestataire extends Model
         'numero_fiscal',
         'statut',
         'valide_le',
+        'motif_rejet',
     ];
 
     protected function casts(): array

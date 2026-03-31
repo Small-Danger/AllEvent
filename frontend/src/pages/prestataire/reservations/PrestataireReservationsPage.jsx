@@ -5,7 +5,7 @@ import { PrestataireGreenBand } from '../../../layouts/PrestataireGreenBand'
 import { prestataireApi } from '../../../services/prestataireApi'
 import './PrestataireReservationsPage.css'
 
-function money(value, devise = 'XAF') {
+function money(value, devise = 'MAD') {
   const n = Number(value || 0)
   return `${n.toLocaleString('fr-FR')} ${devise}`
 }

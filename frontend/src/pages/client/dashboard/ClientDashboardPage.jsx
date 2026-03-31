@@ -5,7 +5,7 @@ import { clientApi } from '../../../services/clientApi'
 import './ClientDashboardPage.css'
 
 function formatAmount(value) {
-  return `${value.toLocaleString('fr-FR')} XAF`
+  return `${value.toLocaleString('fr-FR')} MAD`
 }
 
 export function ClientDashboardPage() {

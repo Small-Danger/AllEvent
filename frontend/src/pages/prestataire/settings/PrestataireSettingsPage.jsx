@@ -17,10 +17,10 @@ export function PrestataireSettingsPage() {
   const [profileId, setProfileId] = useState(null)
   const [form, setForm] = useState({
     businessName: proProfile.name,
-    city: proProfile.city,
-    supportEmail: 'contact@savana-pro.local',
-    autoConfirm: true,
+    legalName: '',
+    fiscalNumber: '',
   })
+  const [profileStatus, setProfileStatus] = useState('')
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [documents, setDocuments] = useState([])
@@ -29,6 +29,7 @@ export function PrestataireSettingsPage() {
   const [docFile, setDocFile] = useState(null)
   const [docUploading, setDocUploading] = useState(false)
   const [docDeletingId, setDocDeletingId] = useState(null)
+  const [rejectReason, setRejectReason] = useState('')
 
   const loadDocuments = useCallback(async (pid) => {
     if (!pid) return
@@ -51,9 +52,13 @@ export function PrestataireSettingsPage() {
         if (!active || !profiles.length) return
         const first = profiles[0]
         setProfileId(first.id)
+        setProfileStatus(first.statut || '')
+        setRejectReason(first.motif_rejet || '')
         setForm((current) => ({
           ...current,
           businessName: first.nom || current.businessName,
+          legalName: first.raison_sociale || '',
+          fiscalNumber: first.numero_fiscal || '',
         }))
         loadDocuments(first.id)
       })
@@ -73,13 +78,34 @@ export function PrestataireSettingsPage() {
 
   const onSave = async () => {
     setError('')
-    if (!profileId) {
-      setSaved(true)
-      showFlash('Aucun profil serveur : preferences locales uniquement.')
+    if (!form.businessName.trim()) {
+      const msg = 'Le nom de la structure est requis.'
+      setError(msg)
+      showFlash(msg, 'error')
       return
     }
     try {
-      await prestataireApi.updateProfile(profileId, { nom: form.businessName })
+      const payload = {
+        nom: form.businessName.trim(),
+        raison_sociale: form.legalName.trim() || null,
+        numero_fiscal: form.fiscalNumber.trim() || null,
+      }
+      let nextProfileId = profileId
+      if (!nextProfileId) {
+        const created = await prestataireApi.createProfile(payload)
+        nextProfileId = created?.id || null
+      } else {
+        await prestataireApi.updateProfile(nextProfileId, payload)
+      }
+      if (nextProfileId) {
+        setProfileId(nextProfileId)
+        const profiles = await prestataireApi.getProfiles()
+        const current = Array.isArray(profiles) ? profiles.find((p) => Number(p.id) === Number(nextProfileId)) : null
+        if (current) {
+          setProfileStatus(current.statut || '')
+          setRejectReason(current.motif_rejet || '')
+        }
+      }
       setSaved(true)
       showFlash('Parametres enregistres sur le serveur.')
     } catch (apiError) {
@@ -131,46 +157,89 @@ export function PrestataireSettingsPage() {
     }
   }
 
+  const hasRequiredFields =
+    form.businessName.trim() !== '' &&
+    form.legalName.trim() !== '' &&
+    form.fiscalNumber.trim() !== ''
+
+  const canSubmit = Boolean(profileId) && hasRequiredFields && documents.length > 0 && !docUploading
+
+  const onSubmitProfile = async () => {
+    if (!profileId) {
+      showFlash('Enregistrez d abord votre structure.', 'error')
+      return
+    }
+    setError('')
+    try {
+      const res = await prestataireApi.submitProfileValidation(profileId)
+      const p = res?.prestataire
+      if (p?.statut) setProfileStatus(p.statut)
+      setRejectReason(p?.motif_rejet || '')
+      showFlash('Demande envoyee. Vous recevrez un email de confirmation.')
+    } catch (apiError) {
+      const msg = apiError.message
+      setError(msg)
+      showFlash(msg, 'error')
+    }
+  }
+
   return (
     <section className="pro-settings-page">
       <header className="settings-head">
         <h1>Parametres professionnels</h1>
-        <p>Centralisez les informations de votre structure et vos preferences operationnelles.</p>
+        <p>Completez votre dossier puis soumettez-le pour validation administrative.</p>
       </header>
       {error && <p className="settings-error">{error}</p>}
       <div className="settings-card">
+        <div className="settings-status-row">
+          <span className={`settings-status-pill settings-status-pill--${profileStatus || 'inconnu'}`}>
+            Statut: {profileStatus || 'non initialise'}
+          </span>
+        </div>
+        {profileStatus === 'rejete' && (
+          <p className="settings-reject-reason">
+            Motif de rejet admin: <strong>{rejectReason || 'Non renseigne'}</strong>
+          </p>
+        )}
         <h2>Identite de la structure</h2>
         <div className="settings-grid">
           <label>
-            Nom business
+            Nom commercial *
             <input
               value={form.businessName}
               onChange={(e) => update('businessName', e.target.value)}
             />
           </label>
           <label>
-            Ville
-            <input value={form.city} onChange={(e) => update('city', e.target.value)} />
+            Raison sociale *
+            <input value={form.legalName} onChange={(e) => update('legalName', e.target.value)} />
           </label>
           <label>
-            Email support
-            <input value={form.supportEmail} onChange={(e) => update('supportEmail', e.target.value)} />
+            Numero fiscal *
+            <input value={form.fiscalNumber} onChange={(e) => update('fiscalNumber', e.target.value)} />
           </label>
         </div>
-        <h2>Automatisation</h2>
-        <label className="switch-row">
-          <input
-            type="checkbox"
-            checked={form.autoConfirm}
-            onChange={(e) => update('autoConfirm', e.target.checked)}
-          />{' '}
-          Confirmation automatique des reservations
-        </label>
         <div className="settings-actions">
           <button type="button" onClick={onSave}>
             Sauvegarder les parametres
           </button>
+          <button
+            type="button"
+            className="settings-submit-btn"
+            disabled={!canSubmit}
+            onClick={onSubmitProfile}
+            title={
+              canSubmit
+                ? 'Soumettre le dossier pour verification admin'
+                : 'Completez les champs obligatoires et deposez au moins une piece.'
+            }
+          >
+            Soumettre le dossier
+          </button>
         </div>
+        <p className="settings-checklist">
+          Exigences admin: nom commercial, raison sociale, numero fiscal et au moins une piece de verification.
+        </p>
         {saved && <span className="settings-saved">Parametres enregistres.</span>}
       </div>
 

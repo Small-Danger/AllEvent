@@ -127,7 +127,7 @@ class GestionCampagnePublicitaireController extends Controller
         $paiement = PaiementPublicite::create([
             'campagne_publicitaire_id' => $campagne->id,
             'montant' => $payload['montant'],
-            'devise' => 'XAF',
+            'devise' => 'MAD',
             'statut' => 'reussi',
             'fournisseur' => 'simulation',
             'paye_le' => now(),

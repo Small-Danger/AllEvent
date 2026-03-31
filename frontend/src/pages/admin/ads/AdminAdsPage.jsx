@@ -21,8 +21,8 @@ function statutLabel(s) {
   return 'Brouillon'
 }
 
-function money(value, devise = 'XAF') {
-  return `${Number(value || 0).toLocaleString('fr-FR')} ${devise || 'XAF'}`
+function money(value, devise = 'MAD') {
+  return `${Number(value || 0).toLocaleString('fr-FR')} ${devise || 'MAD'}`
 }
 
 function formatDate(iso) {
@@ -511,8 +511,8 @@ export function AdminAdsPage() {
                   {detailCampaign.items.map((p) => (
                     <tr key={p.id}>
                       <td>{formatDate(p.paye_le || p.created_at)}</td>
-                      <td>{money(p.montant, p.devise || 'XAF')}</td>
-                      <td>{p.devise || 'XAF'}</td>
+                      <td>{money(p.montant, p.devise || 'MAD')}</td>
+                      <td>{p.devise || 'MAD'}</td>
                       <td>
                         <span className={`admin-ads-pay-pill admin-ads-pay-pill--${paymentTone(p.statut)}`}>
                           {p.statut || '—'}

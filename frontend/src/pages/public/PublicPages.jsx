@@ -4,6 +4,7 @@ import logoAllevent from '../../assets/brand/logo-allevent.png'
 import { useAuth } from '../../context/useAuth'
 import { clientApi } from '../../services/clientApi'
 import { publicApi } from '../../services/publicApi'
+import { prestataireApi } from '../../services/prestataireApi'
 import './public.css'
 
 function resolveHomeByRole(role) {
@@ -238,7 +239,7 @@ export function LandingPage() {
                     {item.reviews > 0 ? `${item.reviews} avis` : 'Nouveau sur la plateforme'}
                   </p>
                   <div className="activity-footer">
-                    <strong>{item.price.toLocaleString('fr-FR')} XAF</strong>
+                    <strong>{item.price.toLocaleString('fr-FR')} MAD</strong>
                     <span className="activity-details">Détails</span>
                   </div>
                 </div>
@@ -509,7 +510,7 @@ export function SearchPage() {
           <option value="price_desc">Prix décroissant</option>
         </select>
         <div className="catalog-range">
-          <label htmlFor="minPrice">Prix min : {minPrice.toLocaleString('fr-FR')} XAF</label>
+          <label htmlFor="minPrice">Prix min : {minPrice.toLocaleString('fr-FR')} MAD</label>
           <input
             id="minPrice"
             type="range"
@@ -524,7 +525,7 @@ export function SearchPage() {
           />
         </div>
         <div className="catalog-range">
-          <label htmlFor="maxPrice">Prix max : {maxPrice.toLocaleString('fr-FR')} XAF</label>
+          <label htmlFor="maxPrice">Prix max : {maxPrice.toLocaleString('fr-FR')} MAD</label>
           <input
             id="maxPrice"
             type="range"
@@ -574,7 +575,7 @@ export function SearchPage() {
                   <p>{item.city}</p>
                   <p>{item.reviews > 0 ? `${item.reviews} avis` : 'Nouveau'}</p>
                   <div className="catalog-footer">
-                    <strong>{item.price.toLocaleString('fr-FR')} XAF</strong>
+                    <strong>{item.price.toLocaleString('fr-FR')} MAD</strong>
                     <span>Détails</span>
                   </div>
                 </div>
@@ -754,12 +755,12 @@ export function ActivityDetailsPage() {
         <aside className="activity-booking">
           {selectedCreneau ? (
             <p className="activity-price-line">
-              <strong>{selectedCreneau.prix.toLocaleString('fr-FR')} XAF</strong>
+              <strong>{selectedCreneau.prix.toLocaleString('fr-FR')} MAD</strong>
               <span>par place (créneau sélectionné)</span>
             </p>
           ) : (
             <p className="activity-price-line">
-              <strong>{activity.price.toLocaleString('fr-FR')} XAF</strong>
+              <strong>{activity.price.toLocaleString('fr-FR')} MAD</strong>
               <span>prix de base</span>
             </p>
           )}
@@ -872,10 +873,10 @@ export function BecomePrestatairePage() {
           </article>
         </div>
         <div className="become-pro-actions become-pro-actions--hero">
-          <Link className="btn btn-primary" to="/register">
+          <Link className="btn btn-primary" to="/prestataire/register">
             Créer mon espace pro
           </Link>
-          <Link className="btn btn-light" to="/login">
+          <Link className="btn btn-light" to="/prestataire/login">
             J&apos;ai déjà un compte
           </Link>
         </div>
@@ -930,6 +931,302 @@ export function BecomePrestatairePage() {
           <li>Des visuels de qualité pour rassurer les clients.</li>
           <li>Un suivi rapide des réservations et messages.</li>
         </ul>
+      </section>
+    </main>
+  )
+}
+
+export function PrestataireLoginPage() {
+  const { login, logout } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const visualImage =
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80'
+
+  const onSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+    setIsSubmitting(true)
+    try {
+      const user = await login(form)
+      if (user.role !== 'prestataire' && user.role !== 'admin') {
+        await logout()
+        throw new Error(
+          'Ce portail est réservé aux prestataires. Utilisez la connexion client ou créez votre espace prestataire.',
+        )
+      }
+      const fallback = user.role === 'admin' ? '/admin/dashboard' : '/prestataire/dashboard'
+      const redirectTarget = location.state?.from?.pathname || fallback
+      navigate(redirectTarget, { replace: true })
+    } catch (loginError) {
+      setError(loginError.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-split">
+        <div className="auth-card">
+          <h1>Connexion prestataire</h1>
+          <p>Accédez à votre espace pro pour gérer activités, disponibilités et réservations.</p>
+          <form className="auth-form" onSubmit={onSubmit}>
+            <input
+              type="email"
+              placeholder="Email professionnel"
+              value={form.email}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, email: event.target.value }))
+              }
+              required
+            />
+            <input
+              type="password"
+              placeholder="Mot de passe"
+              value={form.password}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, password: event.target.value }))
+              }
+              required
+            />
+            {error && <p className="auth-feedback error">{error}</p>}
+            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Connexion...' : 'Se connecter à l espace pro'}
+            </button>
+          </form>
+          <div className="auth-links">
+            <Link to="/forgot-password">Mot de passe oublie ?</Link>
+            <Link to="/prestataire/register">Créer un compte prestataire</Link>
+            <Link to="/login">Connexion client</Link>
+          </div>
+        </div>
+        <aside className="auth-visual">
+          <img src={visualImage} alt="ALL EVENT espace prestataire" />
+          <div className="auth-visual-overlay" />
+          <div className="auth-visual-content">
+            <img src={logoAllevent} alt="ALL EVENT logo" />
+            <h2>Portail prestataire</h2>
+            <p>Un espace dédié pour piloter vos offres et vos performances.</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+  )
+}
+
+export function PrestataireRegisterPage() {
+  const navigate = useNavigate()
+  const [form, setForm] = useState({
+    ownerName: '',
+    email: '',
+    password: '',
+    passwordConfirmation: '',
+    businessName: '',
+    legalName: '',
+    fiscalNumber: '',
+  })
+  const [documents, setDocuments] = useState([{ id: 1, label: '', file: null }])
+  const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const visualImage =
+    'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80'
+
+  const onSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+    if (
+      !form.businessName.trim() ||
+      !form.legalName.trim() ||
+      !form.fiscalNumber.trim()
+    ) {
+      setError('Complétez les informations de structure requises.')
+      return
+    }
+    if (form.password !== form.passwordConfirmation) {
+      setError('Les mots de passe ne correspondent pas.')
+      return
+    }
+    const readyDocs = documents.filter((d) => d.file)
+    if (readyDocs.length === 0) {
+      setError('Ajoutez au moins un document justificatif (PDF/JPG/PNG).')
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      await publicApi.submitPrestataireApplication({
+        ownerName: form.ownerName,
+        email: form.email,
+        password: form.password,
+        passwordConfirmation: form.passwordConfirmation,
+        businessName: form.businessName.trim(),
+        legalName: form.legalName.trim(),
+        fiscalNumber: form.fiscalNumber.trim(),
+        documents: readyDocs,
+      })
+      setSubmitted(true)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const addDocumentField = () => {
+    setDocuments((current) => [...current, { id: Date.now(), label: '', file: null }])
+  }
+
+  const removeDocumentField = (id) => {
+    setDocuments((current) => (current.length > 1 ? current.filter((d) => d.id !== id) : current))
+  }
+
+  const updateDocument = (id, patch) => {
+    setDocuments((current) => current.map((d) => (d.id === id ? { ...d, ...patch } : d)))
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-split">
+        <div className="auth-card">
+          <h1>Inscription prestataire</h1>
+          <p>
+            Formulaire dédié prestataire: dossier société + pièces justificatives pour validation admin.
+          </p>
+          {!submitted ? (
+            <form className="auth-form" onSubmit={onSubmit}>
+              <input
+                type="text"
+                placeholder="Nom du responsable"
+                value={form.ownerName}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, ownerName: event.target.value }))
+                }
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email professionnel"
+                value={form.email}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, email: event.target.value }))
+                }
+                required
+              />
+              <input
+                type="text"
+                placeholder="Nom commercial de la structure"
+                value={form.businessName}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, businessName: event.target.value }))
+                }
+                required
+              />
+              <input
+                type="text"
+                placeholder="Raison sociale"
+                value={form.legalName}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, legalName: event.target.value }))
+                }
+                required
+              />
+              <input
+                type="text"
+                placeholder="Numero fiscal"
+                value={form.fiscalNumber}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, fiscalNumber: event.target.value }))
+                }
+                required
+              />
+              <input
+                type="password"
+                placeholder="Mot de passe"
+                value={form.password}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, password: event.target.value }))
+                }
+                required
+              />
+              <input
+                type="password"
+                placeholder="Confirmation mot de passe"
+                value={form.passwordConfirmation}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    passwordConfirmation: event.target.value,
+                  }))
+                }
+                required
+              />
+              <div className="auth-docs">
+                <strong>Pièces justificatives (min. 1)</strong>
+                {documents.map((doc, idx) => (
+                  <div className="auth-doc-row" key={doc.id}>
+                    <input
+                      type="text"
+                      placeholder={`Libellé document #${idx + 1} (optionnel)`}
+                      value={doc.label}
+                      onChange={(event) => updateDocument(doc.id, { label: event.target.value })}
+                    />
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                      onChange={(event) => updateDocument(doc.id, { file: event.target.files?.[0] || null })}
+                      required={idx === 0}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-light"
+                      onClick={() => removeDocumentField(doc.id)}
+                      disabled={documents.length === 1}
+                    >
+                      Retirer
+                    </button>
+                  </div>
+                ))}
+                <button type="button" className="btn btn-light" onClick={addDocumentField}>
+                  Ajouter un document
+                </button>
+              </div>
+              {error && <p className="auth-feedback error">{error}</p>}
+              <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Envoi...' : 'Envoyer ma demande prestataire'}
+              </button>
+            </form>
+          ) : (
+            <div className="auth-form">
+              <p className="auth-feedback">
+                Demande bien reçue. Un email vous a été envoyé pour confirmer la réception de votre dossier.
+              </p>
+              <p className="auth-feedback">
+                Votre compte sera contrôlé sous 48h ouvrées. Vous recevrez un email dès validation pour accéder
+                à votre espace prestataire.
+              </p>
+              <button className="btn btn-primary" type="button" onClick={() => navigate('/prestataire/login')}>
+                Aller à la connexion prestataire
+              </button>
+            </div>
+          )}
+          <div className="auth-links">
+            <Link to="/prestataire/login">J&apos;ai déjà un compte prestataire</Link>
+            <Link to="/register">Créer un compte client</Link>
+          </div>
+        </div>
+        <aside className="auth-visual">
+          <img src={visualImage} alt="ALL EVENT onboarding prestataire" />
+          <div className="auth-visual-overlay" />
+          <div className="auth-visual-content">
+            <img src={logoAllevent} alt="ALL EVENT logo" />
+            <h2>Onboarding prestataire</h2>
+            <p>Activation OTP, création structure, puis soumission des pièces pour validation admin.</p>
+          </div>
+        </aside>
       </section>
     </main>
   )
@@ -1011,7 +1308,7 @@ export function LoginPage() {
 }
 
 export function RegisterPage() {
-  const { register } = useAuth()
+  const { register, verifyOtp, resendOtp } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({
     name: '',
@@ -1020,6 +1317,8 @@ export function RegisterPage() {
     passwordConfirmation: '',
   })
   const [error, setError] = useState('')
+  const [otp, setOtp] = useState('')
+  const [otpStep, setOtpStep] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const visualImage =
     'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
@@ -1035,10 +1334,28 @@ export function RegisterPage() {
 
     setIsSubmitting(true)
     try {
-      const user = await register(form)
-      navigate(resolveHomeByRole(user.role), { replace: true })
+      const result = await register(form)
+      if (result?.otpRequired) {
+        setOtpStep(true)
+      } else if (result?.user) {
+        navigate(resolveHomeByRole(result.user.role), { replace: true })
+      }
     } catch (registerError) {
       setError(registerError.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const onVerifyOtp = async (event) => {
+    event.preventDefault()
+    setError('')
+    setIsSubmitting(true)
+    try {
+      const user = await verifyOtp({ email: form.email, otp })
+      navigate(resolveHomeByRole(user.role), { replace: true })
+    } catch (e) {
+      setError(e.message)
     } finally {
       setIsSubmitting(false)
     }
@@ -1049,52 +1366,90 @@ export function RegisterPage() {
       <section className="auth-split">
         <div className="auth-card">
           <h1>Inscription</h1>
-          <p>Rejoins ALL EVENT pour reserver et suivre tes activites.</p>
-          <form className="auth-form" onSubmit={onSubmit}>
-            <input
-              type="text"
-              placeholder="Nom complet"
-              value={form.name}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, name: event.target.value }))
-              }
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, email: event.target.value }))
-              }
-              required
-            />
-            <input
-              type="password"
-              placeholder="Mot de passe"
-              value={form.password}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, password: event.target.value }))
-              }
-              required
-            />
-            <input
-              type="password"
-              placeholder="Confirmation mot de passe"
-              value={form.passwordConfirmation}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  passwordConfirmation: event.target.value,
-                }))
-              }
-              required
-            />
-            {error && <p className="auth-feedback error">{error}</p>}
-            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creation...' : 'Creer mon compte'}
-            </button>
-          </form>
+          <p>
+            {otpStep
+              ? `Un code OTP a ete envoye a ${form.email}.`
+              : 'Rejoins ALL EVENT pour reserver et suivre tes activites.'}
+          </p>
+          {!otpStep ? (
+            <form className="auth-form" onSubmit={onSubmit}>
+              <input
+                type="text"
+                placeholder="Nom complet"
+                value={form.name}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, name: event.target.value }))
+                }
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={form.email}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, email: event.target.value }))
+                }
+                required
+              />
+              <input
+                type="password"
+                placeholder="Mot de passe"
+                value={form.password}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, password: event.target.value }))
+                }
+                required
+              />
+              <input
+                type="password"
+                placeholder="Confirmation mot de passe"
+                value={form.passwordConfirmation}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    passwordConfirmation: event.target.value,
+                  }))
+                }
+                required
+              />
+              {error && <p className="auth-feedback error">{error}</p>}
+              <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Creation...' : 'Creer mon compte'}
+              </button>
+            </form>
+          ) : (
+            <form className="auth-form" onSubmit={onVerifyOtp}>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Code OTP (6 chiffres)"
+                value={otp}
+                onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                required
+              />
+              {error && <p className="auth-feedback error">{error}</p>}
+              <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Verification...' : 'Activer mon compte'}
+              </button>
+              <button
+                className="btn btn-light"
+                type="button"
+                disabled={isSubmitting}
+                onClick={async () => {
+                  try {
+                    setError('')
+                    await resendOtp({ email: form.email })
+                    setError('Nouveau code OTP envoye.')
+                  } catch (e) {
+                    setError(e.message)
+                  }
+                }}
+              >
+                Renvoyer le code
+              </button>
+            </form>
+          )}
           <div className="auth-links">
             <Link to="/login">J&apos;ai deja un compte</Link>
           </div>

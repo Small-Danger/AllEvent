@@ -10,7 +10,7 @@ const TAB_TODAY = 'today'
 const TAB_ANALYSES = 'analyses'
 
 function money(value) {
-  return `${Number(value || 0).toLocaleString('fr-FR')} XAF`
+  return `${Number(value || 0).toLocaleString('fr-FR')} MAD`
 }
 
 export function PrestataireDashboardPage() {

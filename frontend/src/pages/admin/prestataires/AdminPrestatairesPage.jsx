@@ -49,6 +49,7 @@ export function AdminPrestatairesPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [statutSubmitting, setStatutSubmitting] = useState(false)
   const [rejectTarget, setRejectTarget] = useState(null)
+  const [rejectReason, setRejectReason] = useState('')
   const [downloadingId, setDownloadingId] = useState(null)
   const detailReqId = useRef(0)
 
@@ -104,8 +105,13 @@ export function AdminPrestatairesPage() {
     setStatutSubmitting(true)
     setError('')
     try {
-      await adminApi.updatePrestataireStatut(prestataireId, nextStatut)
+      await adminApi.updatePrestataireStatut(
+        prestataireId,
+        nextStatut,
+        nextStatut === 'rejete' ? rejectReason : '',
+      )
       setRejectTarget(null)
+      setRejectReason('')
       await loadList()
       if (detail && Number(detail.id) === Number(prestataireId)) {
         const refreshed = await adminApi.getPrestataire(prestataireId)
@@ -123,7 +129,13 @@ export function AdminPrestatairesPage() {
     setPage(1)
   }
 
-  const docCount = (row) => row.documents_count ?? 0
+  const docCount = (row) => {
+    const fromCount = Number(row?.documents_count ?? 0)
+    const fromEmbedded = Array.isArray(row?.documents) ? row.documents.length : 0
+    return Number.isFinite(fromCount) && fromCount > 0
+      ? fromCount
+      : fromEmbedded
+  }
 
   const canValidateWithDocs = (row) =>
     row?.statut === 'en_attente_validation' ? docCount(row) > 0 : true
@@ -269,7 +281,10 @@ export function AdminPrestatairesPage() {
                           type="button"
                           className="admin-presta-btn danger"
                           disabled={statutSubmitting}
-                          onClick={() => setRejectTarget(row)}
+                          onClick={() => {
+                            setRejectTarget(row)
+                            setRejectReason('')
+                          }}
                         >
                           Rejeter
                         </button>
@@ -351,6 +366,10 @@ export function AdminPrestatairesPage() {
                   <div>
                     <dt>Validé le</dt>
                     <dd>{formatDate(detail.valide_le)}</dd>
+                  </div>
+                  <div>
+                    <dt>Motif de rejet</dt>
+                    <dd>{detail.motif_rejet || '—'}</dd>
                   </div>
                   <div>
                     <dt>Activités</dt>
@@ -437,7 +456,10 @@ export function AdminPrestatairesPage() {
                       type="button"
                       className="admin-presta-btn danger"
                       disabled={statutSubmitting}
-                      onClick={() => setRejectTarget(detail)}
+                      onClick={() => {
+                        setRejectTarget(detail)
+                        setRejectReason('')
+                      }}
                     >
                       Rejeter
                     </button>
@@ -467,19 +489,31 @@ export function AdminPrestatairesPage() {
               Le prestataire <strong>{rejectTarget.nom}</strong> passera au statut{' '}
               <strong>rejeté</strong>. Les membres en seront informés via le journal de notifications.
             </p>
+            <label className="admin-presta-field">
+              <span>Motif de rejet (obligatoire)</span>
+              <textarea
+                rows={4}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Expliquez les corrections attendues (documents, incohérences, etc.)."
+              />
+            </label>
             <div className="admin-presta-modal-actions">
               <button
                 type="button"
                 className="admin-presta-btn ghost"
                 disabled={statutSubmitting}
-                onClick={() => setRejectTarget(null)}
+                onClick={() => {
+                  setRejectTarget(null)
+                  setRejectReason('')
+                }}
               >
                 Annuler
               </button>
               <button
                 type="button"
                 className="admin-presta-btn danger"
-                disabled={statutSubmitting}
+                disabled={statutSubmitting || !rejectReason.trim()}
                 onClick={() => applyStatut(rejectTarget.id, 'rejete')}
               >
                 {statutSubmitting ? 'Envoi…' : 'Confirmer le refus'}

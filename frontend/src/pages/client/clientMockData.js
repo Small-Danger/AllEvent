@@ -126,7 +126,7 @@ export const messageThreads = [
       {
         id: 'M-3',
         from: 'them',
-        text: '5000 XAF, payable sur place.',
+        text: '500 MAD, payable sur place.',
         time: '09:21',
       },
     ],

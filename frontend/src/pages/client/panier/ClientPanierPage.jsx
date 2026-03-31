@@ -4,7 +4,7 @@ import { clientApi } from '../../../services/clientApi'
 import './ClientPanierPage.css'
 
 function money(value) {
-  return `${Number(value || 0).toLocaleString('fr-FR')} XAF`
+  return `${Number(value || 0).toLocaleString('fr-FR')} MAD`
 }
 
 export function ClientPanierPage() {

@@ -3,7 +3,7 @@ import { adminApi } from '../../../services/adminApi'
 import './AdminCommissionsPage.css'
 
 function money(value) {
-  return `${Number(value || 0).toLocaleString('fr-FR')} XAF`
+  return `${Number(value || 0).toLocaleString('fr-FR')} MAD`
 }
 
 function formatDate(iso) {

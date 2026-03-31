@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('prestataire_id')->constrained('prestataires')->cascadeOnDelete();
             $table->decimal('montant_plateforme', 10, 2);
             $table->decimal('montant_net_prestataire', 10, 2);
-            $table->string('devise', 3)->default('XAF');
+            $table->string('devise', 3)->default('MAD');
             $table->timestamps();
 
             $table->unique('paiement_id');

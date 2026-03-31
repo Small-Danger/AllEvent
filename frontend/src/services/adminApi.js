@@ -143,10 +143,13 @@ export const adminApi = {
   },
 
   /** PATCH /admin/prestataires/{id}/statut — en_attente_validation | valide | rejete */
-  async updatePrestataireStatut(prestataireId, statut) {
+  async updatePrestataireStatut(prestataireId, statut, motifRejet = '') {
     return request(`/admin/prestataires/${prestataireId}/statut`, {
       method: 'PATCH',
-      body: JSON.stringify({ statut }),
+      body: JSON.stringify({
+        statut,
+        ...(statut === 'rejete' ? { motif_rejet: motifRejet } : {}),
+      }),
     })
   },
 

@@ -11,7 +11,7 @@ const TABS = [
 ]
 
 function money(value) {
-  return `${Number(value || 0).toLocaleString('fr-FR')} XAF`
+  return `${Number(value || 0).toLocaleString('fr-FR')} MAD`
 }
 
 function number(value) {

@@ -9,7 +9,9 @@ async function apiRequest(path, options = {}, token) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
+      Accept: 'application/json',
       'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
@@ -96,13 +98,36 @@ export function AuthProvider({ children }) {
         password_confirmation: passwordConfirmation,
       }),
     })
+      if (data?.token && data?.user) {
+        localStorage.setItem(TOKEN_STORAGE_KEY, data.token)
+        setAuth(mapAuthFromUser(data.user, data.token))
+        return { user: data.user, otpRequired: false }
+      }
 
-      localStorage.setItem(TOKEN_STORAGE_KEY, data.token)
-      setAuth(mapAuthFromUser(data.user, data.token))
-      return data.user
+      return {
+        user: data?.user || null,
+        otpRequired: Boolean(data?.otp_required),
+      }
     },
     [],
   )
+
+  const verifyOtp = useCallback(async ({ email, otp }) => {
+    const data = await apiRequest('/public/auth/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    })
+    localStorage.setItem(TOKEN_STORAGE_KEY, data.token)
+    setAuth(mapAuthFromUser(data.user, data.token))
+    return data.user
+  }, [])
+
+  const resendOtp = useCallback(async ({ email }) => {
+    return apiRequest('/public/auth/otp/resend', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    })
+  }, [])
 
   const logout = useCallback(async () => {
     try {
@@ -124,8 +149,8 @@ export function AuthProvider({ children }) {
   }, [auth.token])
 
   const value = useMemo(
-    () => ({ auth, setAuth, login, register, logout }),
-    [auth, login, logout, register],
+    () => ({ auth, setAuth, login, register, verifyOtp, resendOtp, logout }),
+    [auth, login, logout, register, resendOtp, verifyOtp],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

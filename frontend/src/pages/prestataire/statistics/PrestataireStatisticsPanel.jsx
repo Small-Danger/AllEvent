@@ -4,7 +4,7 @@ import { PrestataireGreenBand } from '../../../layouts/PrestataireGreenBand'
 import { prestataireApi } from '../../../services/prestataireApi'
 import './PrestataireStatisticsPage.css'
 
-function money(n, devise = 'XAF') {
+function money(n, devise = 'MAD') {
   return `${Number(n || 0).toLocaleString('fr-FR')} ${devise}`
 }
 

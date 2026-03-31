@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('campagne_publicitaire_id')->constrained('campagnes_publicitaires')->cascadeOnDelete();
             $table->decimal('montant', 12, 2);
-            $table->string('devise', 3)->default('XAF');
+            $table->string('devise', 3)->default('MAD');
             $table->string('statut', 32)->default('en_attente');
             $table->string('fournisseur', 32)->nullable();
             $table->string('id_intention_fournisseur')->nullable();

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Client;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TicketIssuedMail;
 use App\Models\Commission;
 use App\Models\JournalNotification;
 use App\Models\Panier;
@@ -12,6 +13,7 @@ use App\Models\Reservation;
 use App\Services\Reservation\CheckoutPanierService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use InvalidArgumentException;
 
 /**
@@ -103,6 +105,7 @@ class ReservationClientController extends Controller
         ]);
 
         $reservation->update(['statut' => 'payee']);
+        $reservation->load(['user:id,email,name', 'lignes.creneau.activite.lieu', 'billet', 'paiement']);
 
         $prestataireId = $reservation->lignes()
             ->with('creneau.activite:id,prestataire_id')
@@ -144,6 +147,19 @@ class ReservationClientController extends Controller
             'statut' => 'envoye',
             'envoye_le' => now(),
         ]);
+
+        $firstLigne = $reservation->lignes->first();
+        $lieu = $firstLigne?->creneau?->activite?->lieu;
+        $mapsUrl = null;
+        if ($lieu?->latitude !== null && $lieu?->longitude !== null) {
+            $mapsUrl = 'https://www.google.com/maps?q='.$lieu->latitude.','.$lieu->longitude;
+        } elseif ($lieu?->adresse || $lieu?->nom) {
+            $mapsUrl = 'https://www.google.com/maps/search/?api=1&query='.urlencode(trim(($lieu->nom ?? '').' '.($lieu->adresse ?? '')));
+        }
+
+        if ($reservation->user?->email) {
+            Mail::to($reservation->user->email)->send(new TicketIssuedMail($reservation, $mapsUrl));
+        }
 
         return response()->json([
             'message' => 'Paiement simule et valide.',

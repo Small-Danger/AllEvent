@@ -6,7 +6,7 @@ import { prestataireApi } from '../../../services/prestataireApi'
 import './PrestataireAdsPage.css'
 
 function money(n) {
-  return `${Number(n || 0).toLocaleString('fr-FR')} XAF`
+  return `${Number(n || 0).toLocaleString('fr-FR')} MAD`
 }
 
 function toInputDateTime(iso) {
@@ -582,7 +582,7 @@ export function PrestataireAdsPage() {
                   />
                 </label>
                 <label className="ads-field">
-                  <span>Budget (XAF)</span>
+                  <span>Budget (MAD)</span>
                   <input
                     type="number"
                     min="0"
@@ -738,7 +738,7 @@ export function PrestataireAdsPage() {
                   />
                 </label>
                 <label className="ads-field">
-                  <span>Budget (XAF)</span>
+                  <span>Budget (MAD)</span>
                   <input
                     type="number"
                     min="0"
@@ -779,7 +779,7 @@ export function PrestataireAdsPage() {
             </p>
             <form className="ads-form" onSubmit={submitPay}>
               <label className="ads-field">
-                <span>Montant (XAF)</span>
+                <span>Montant (MAD)</span>
                 <input
                   type="number"
                   min="0"

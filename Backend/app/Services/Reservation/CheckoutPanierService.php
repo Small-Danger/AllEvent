@@ -83,7 +83,7 @@ class CheckoutPanierService
                 'statut' => 'en_attente_paiement',
                 'montant_total' => $montantTotal,
                 'montant_reduction' => $montantReduction !== '0.00' ? $montantReduction : null,
-                'devise' => 'XAF',
+                'devise' => 'MAD',
             ]);
 
             foreach ($lignes as $ligne) {
@@ -108,7 +108,7 @@ class CheckoutPanierService
             $paiement = Paiement::create([
                 'reservation_id' => $reservation->id,
                 'montant' => $montantTotal,
-                'devise' => 'XAF',
+                'devise' => 'MAD',
                 'statut' => 'en_attente',
             ]);
 

@@ -52,10 +52,10 @@ class DemoDataSeeder extends Seeder
             'user_id' => $admin->id,
             'prenom' => 'Admin',
             'nom' => 'Principal',
-            'telephone' => '+237600000001',
+            'telephone' => '+212600000001',
         ]);
 
-        $clients = collect(range(1, 3))->map(function (int $i) use ($password) {
+        $clients = collect(range(1, 60))->map(function (int $i) use ($password) {
             $user = User::query()->create([
                 'name' => "Client {$i}",
                 'email' => "client{$i}@allevent.local",
@@ -67,15 +67,15 @@ class DemoDataSeeder extends Seeder
 
             Profil::query()->create([
                 'user_id' => $user->id,
-                'prenom' => "PrenomClient{$i}",
-                'nom' => "NomClient{$i}",
-                'telephone' => "+23760000010{$i}",
+                'prenom' => "Client{$i}",
+                'nom' => "Maroc{$i}",
+                'telephone' => "+2126000001".str_pad((string) $i, 2, '0', STR_PAD_LEFT),
             ]);
 
             return $user;
         });
 
-        $prestataireUsers = collect(range(1, 3))->map(function (int $i) use ($password) {
+        $prestataireUsers = collect(range(1, 6))->map(function (int $i) use ($password) {
             $user = User::query()->create([
                 'name' => "Prestataire User {$i}",
                 'email' => "prestataire{$i}@allevent.local",
@@ -87,46 +87,58 @@ class DemoDataSeeder extends Seeder
 
             Profil::query()->create([
                 'user_id' => $user->id,
-                'prenom' => "PrenomPrestataire{$i}",
-                'nom' => "NomPrestataire{$i}",
-                'telephone' => "+23760000020{$i}",
+                'prenom' => "Prestataire{$i}",
+                'nom' => "Maroc{$i}",
+                'telephone' => "+2126000002".str_pad((string) $i, 2, '0', STR_PAD_LEFT),
             ]);
 
             return $user;
         });
 
         $categories = collect([
-            'Aventure',
-            'Culture',
-            'Gastronomie',
-            'Nature',
+            'Loisirs & sorties',
+            'Parcs & attractions',
+            'Jeux & aventure',
+            'Evenements & spectacles',
+            'Sports & activites',
+            'Ateliers creatifs',
+            'Enfants & famille',
             'Vie nocturne',
         ])->map(fn (string $nom) => Categorie::query()->create([
             'nom' => $nom,
             'slug' => Str::slug($nom),
         ]));
 
-        $villes = collect(['Douala', 'Yaounde', 'Bafoussam'])->map(fn (string $nom) => Ville::query()->create([
+        $villes = collect(['Casablanca', 'Marrakech', 'Rabat', 'Fes', 'Tanger', 'Agadir'])->map(fn (string $nom) => Ville::query()->create([
             'nom' => $nom,
-            'code_pays' => 'CM',
+            'code_pays' => 'MA',
         ]));
 
-        $lieux = $villes->flatMap(function (Ville $ville) {
-            return collect(range(1, 3))->map(function (int $n) use ($ville) {
+        $coords = [
+            'Casablanca' => [33.5731, -7.5898],
+            'Marrakech' => [31.6295, -7.9811],
+            'Rabat' => [34.0209, -6.8416],
+            'Fes' => [34.0181, -5.0078],
+            'Tanger' => [35.7595, -5.8340],
+            'Agadir' => [30.4278, -9.5981],
+        ];
+        $lieux = $villes->flatMap(function (Ville $ville) use ($coords) {
+            $base = $coords[$ville->nom] ?? [33.9, -6.8];
+            return collect(range(1, 2))->map(function (int $n) use ($ville, $base) {
                 return Lieu::query()->create([
                     'ville_id' => $ville->id,
                     'nom' => "Lieu {$ville->nom} {$n}",
-                    'adresse' => "Avenue {$n}, {$ville->nom}",
-                    'latitude' => 4.00 + ($n / 10),
-                    'longitude' => 9.00 + ($n / 10),
+                    'adresse' => "Quartier central {$n}, {$ville->nom}",
+                    'latitude' => $base[0] + ($n * 0.01),
+                    'longitude' => $base[1] + ($n * 0.01),
                 ]);
             });
         })->values();
 
         $prestataires = $prestataireUsers->map(function (User $user, int $i) {
             $prestataire = Prestataire::query()->create([
-                'nom' => 'Prestataire '.($i + 1),
-                'raison_sociale' => "Allevent Services ".($i + 1),
+                'nom' => ['Atlas Experiences', 'Medina Tours', 'Sahara & Co', 'Riad Activities', 'Ocean Vibes', 'Fes Culture Hub'][$i] ?? ('Prestataire '.($i + 1)),
+                'raison_sociale' => "Allevent Maroc Services ".($i + 1),
                 'numero_fiscal' => 'MRC'.str_pad((string) ($i + 1), 6, '0', STR_PAD_LEFT),
                 'statut' => 'valide',
                 'valide_le' => now()->subDays(10 - $i),
@@ -148,49 +160,68 @@ class DemoDataSeeder extends Seeder
             return $prestataire;
         });
 
+        $templates = [
+            ['titre' => 'Escape game medina', 'categorie' => 'Jeux & aventure', 'prix' => 220],
+            ['titre' => 'Laser game arena', 'categorie' => 'Jeux & aventure', 'prix' => 190],
+            ['titre' => 'Session paintball outdoor', 'categorie' => 'Jeux & aventure', 'prix' => 260],
+            ['titre' => 'Bowling night challenge', 'categorie' => 'Loisirs & sorties', 'prix' => 140],
+            ['titre' => 'Karting urbain premium', 'categorie' => 'Sports & activites', 'prix' => 280],
+            ['titre' => 'Trampoline park freestyle', 'categorie' => 'Parcs & attractions', 'prix' => 130],
+            ['titre' => 'Parc aquatique family pass', 'categorie' => 'Parcs & attractions', 'prix' => 170],
+            ['titre' => 'Concert live gnawa', 'categorie' => 'Evenements & spectacles', 'prix' => 240],
+            ['titre' => 'Stand-up comedy night', 'categorie' => 'Evenements & spectacles', 'prix' => 160],
+            ['titre' => 'Cinema plein air experience', 'categorie' => 'Evenements & spectacles', 'prix' => 120],
+            ['titre' => 'Atelier DJ debutant', 'categorie' => 'Ateliers creatifs', 'prix' => 200],
+            ['titre' => 'Atelier theatre d impro', 'categorie' => 'Ateliers creatifs', 'prix' => 180],
+            ['titre' => 'Kids club creatif weekend', 'categorie' => 'Enfants & famille', 'prix' => 110],
+            ['titre' => 'Parcours aventure famille', 'categorie' => 'Enfants & famille', 'prix' => 150],
+            ['titre' => 'Soiree rooftop DJ set', 'categorie' => 'Vie nocturne', 'prix' => 250],
+        ];
+        $categoriesByName = $categories->keyBy('nom');
         $activites = collect();
-        for ($i = 1; $i <= 15; $i++) {
-            $prestataire = $prestataires[($i - 1) % $prestataires->count()];
-            $categorie = $categories[($i - 1) % $categories->count()];
-            $ville = $villes[($i - 1) % $villes->count()];
-            $lieu = $lieux->firstWhere('ville_id', $ville->id);
+        foreach ($prestataires as $pIndex => $prestataire) {
+            foreach ($templates as $tIndex => $template) {
+                $ville = $villes[($tIndex + $pIndex) % $villes->count()];
+                $categorie = $categoriesByName->get($template['categorie']) ?? $categories[0];
+                $lieu = $lieux->firstWhere('ville_id', $ville->id);
+                $prixBase = (int) $template['prix'] + ($pIndex * 30);
+                $activite = Activite::query()->create([
+                    'prestataire_id' => $prestataire->id,
+                    'categorie_id' => $categorie->id,
+                    'ville_id' => $ville->id,
+                    'lieu_id' => $lieu?->id,
+                    'titre' => $template['titre'],
+                    'description' => "Experience {$template['titre']} au Maroc, organisee par {$prestataire->nom}.",
+                    'statut' => 'publiee',
+                    'prix_base' => $prixBase,
+                ]);
+                $activites->push($activite);
 
-            $activite = Activite::query()->create([
-                'prestataire_id' => $prestataire->id,
-                'categorie_id' => $categorie->id,
-                'ville_id' => $ville->id,
-                'lieu_id' => $lieu?->id,
-                'titre' => "Activite Demo {$i}",
-                'description' => "Description complete de l'activite demo {$i}.",
-                'statut' => 'publiee',
-                'prix_base' => 7500 + ($i * 500),
-            ]);
-            $activites->push($activite);
+                ActiviteMedia::query()->create([
+                    'activite_id' => $activite->id,
+                    'url' => "https://picsum.photos/seed/maroc-{$prestataire->id}-{$tIndex}/900/600",
+                    'ordre' => 0,
+                ]);
 
-            ActiviteMedia::query()->create([
-                'activite_id' => $activite->id,
-                'url' => "https://picsum.photos/seed/allevent-{$i}/900/600",
-                'ordre' => 0,
-            ]);
-
-            Creneau::query()->create([
-                'activite_id' => $activite->id,
-                'debut_at' => now()->addDays($i)->setHour(10),
-                'fin_at' => now()->addDays($i)->setHour(13),
-                'capacite_totale' => 30,
-                'capacite_restante' => 24,
-                'prix_applique' => 7500 + ($i * 500),
-                'statut' => 'ouvert',
-            ]);
-            Creneau::query()->create([
-                'activite_id' => $activite->id,
-                'debut_at' => now()->addDays($i + 5)->setHour(15),
-                'fin_at' => now()->addDays($i + 5)->setHour(18),
-                'capacite_totale' => 20,
-                'capacite_restante' => 18,
-                'prix_applique' => 8000 + ($i * 450),
-                'statut' => 'ouvert',
-            ]);
+                Creneau::query()->create([
+                    'activite_id' => $activite->id,
+                    'debut_at' => now()->addDays($tIndex + 1)->setHour(10),
+                    'fin_at' => now()->addDays($tIndex + 1)->setHour(13),
+                    'capacite_totale' => 24,
+                    'capacite_restante' => 18,
+                    'prix_applique' => $prixBase,
+                    'statut' => 'ouvert',
+                ]);
+                Creneau::query()->create([
+                    'activite_id' => $activite->id,
+                    'debut_at' => now()->addDays($tIndex + 6)->setHour(16),
+                    'fin_at' => now()->addDays($tIndex + 6)->setHour(19),
+                    'capacite_totale' => 18,
+                    'capacite_restante' => 14,
+                    'prix_applique' => $prixBase + 20,
+                    'statut' => 'ouvert',
+                ]);
+            }
         }
 
         $promotions = $prestataires->map(function (Prestataire $prestataire, int $i) {
@@ -220,14 +251,14 @@ class DemoDataSeeder extends Seeder
                 'debut_at' => now()->subDays(2),
                 'fin_at' => now()->addDays(20),
                 'priorite' => 5 + $i,
-                'budget_montant' => 60000 + ($i * 5000),
+                'budget_montant' => 12000 + ($i * 2500),
                 'statut' => 'validee',
             ]);
 
             PaiementPublicite::query()->create([
                 'campagne_publicitaire_id' => $campagne->id,
-                'montant' => 25000 + ($i * 2500),
-                'devise' => 'XAF',
+                'montant' => 4000 + ($i * 900),
+                'devise' => 'MAD',
                 'statut' => 'paye',
                 'fournisseur' => 'simulation',
                 'id_intention_fournisseur' => 'ad-intent-'.$campagne->id,
@@ -241,7 +272,7 @@ class DemoDataSeeder extends Seeder
         $paidPaymentIds = collect();
         foreach ($clients as $indexClient => $client) {
             for ($j = 0; $j < 3; $j++) {
-                $activite = $activites[($indexClient * 3) + $j];
+                $activite = $activites[(($indexClient * 3) + $j) % $activites->count()];
                 $creneau = Creneau::query()->where('activite_id', $activite->id)->firstOrFail();
 
                 $panier = Panier::query()->create([
@@ -256,8 +287,8 @@ class DemoDataSeeder extends Seeder
                     'promotion_id' => $promotions[$indexClient % $promotions->count()]->id,
                     'statut' => $j === 2 ? 'annulee' : 'payee',
                     'montant_total' => (float) $creneau->prix_applique * 2,
-                    'montant_reduction' => 1000,
-                    'devise' => 'XAF',
+                    'montant_reduction' => 30,
+                    'devise' => 'MAD',
                 ]);
                 $reservations->push($reservation);
 
@@ -271,7 +302,7 @@ class DemoDataSeeder extends Seeder
                 $paiement = Paiement::query()->create([
                     'reservation_id' => $reservation->id,
                     'montant' => $reservation->montant_total,
-                    'devise' => 'XAF',
+                    'devise' => 'MAD',
                     'statut' => $j === 2 ? 'annule' : 'paye',
                     'fournisseur' => 'simulation',
                     'id_intention_fournisseur' => 'pay-intent-'.$reservation->id,
@@ -304,7 +335,7 @@ class DemoDataSeeder extends Seeder
                 'prestataire_id' => $activite->prestataire_id,
                 'montant_plateforme' => round((float) $payment->montant * 0.125, 2),
                 'montant_net_prestataire' => round((float) $payment->montant * 0.875, 2),
-                'devise' => 'XAF',
+                'devise' => 'MAD',
             ]);
         }
 
@@ -432,5 +463,21 @@ class DemoDataSeeder extends Seeder
             'payload' => ['source' => 'seed_demo'],
             'occurred_at' => now()->subMinutes(30),
         ]);
+
+        foreach (range(1, 80) as $i) {
+            $randomActivite = $activites[$i % $activites->count()];
+            EvenementStatistique::query()->create([
+                'type_evenement' => $i % 3 === 0 ? 'search_view' : ($i % 3 === 1 ? 'activity_view' : 'reservation_payee'),
+                'user_id' => $clients[$i % $clients->count()]->id,
+                'session_id' => Str::uuid()->toString(),
+                'activite_id' => $randomActivite->id,
+                'ville_id' => $randomActivite->ville_id,
+                'prestataire_id' => $randomActivite->prestataire_id,
+                'reservation_id' => $reservations[$i % $reservations->count()]->id,
+                'campagne_publicitaire_id' => $campagnes[$i % $campagnes->count()]->id,
+                'payload' => ['source' => 'seed_preprod', 'batch' => $i],
+                'occurred_at' => now()->subMinutes(120 - $i),
+            ]);
+        }
     }
 }

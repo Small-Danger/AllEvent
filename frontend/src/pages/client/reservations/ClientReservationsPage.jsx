@@ -10,7 +10,7 @@ const tabs = [
 ]
 
 function formatAmount(value) {
-  return `${value.toLocaleString('fr-FR')} XAF`
+  return `${value.toLocaleString('fr-FR')} MAD`
 }
 
 function buildTicketQrValue(ticket) {

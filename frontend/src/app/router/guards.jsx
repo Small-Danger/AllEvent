@@ -60,7 +60,10 @@ export function RequireAuth() {
   }
 
   if (!auth.isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location }} />
+    const loginTarget = location.pathname.startsWith('/prestataire')
+      ? '/prestataire/login'
+      : '/login'
+    return <Navigate to={loginTarget} replace state={{ from: location }} />
   }
 
   return <Outlet />

@@ -53,7 +53,10 @@ Route::prefix('public')->group(function (): void {
 
     // Auth publique.
     Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/auth/prestataire/register', [AuthController::class, 'registerPrestataire']);
     Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/otp/verify', [AuthController::class, 'verifyOtp']);
+    Route::post('/auth/otp/resend', [AuthController::class, 'resendOtp']);
     Route::post('/auth/mot-de-passe/email', [MotDePasseController::class, 'demanderLienReset']);
     Route::post('/auth/mot-de-passe/reset', [MotDePasseController::class, 'reinitialiser']);
 });
