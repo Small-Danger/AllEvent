@@ -1,4 +1,6 @@
 export { ClientDashboardPage } from './dashboard/ClientDashboardPage'
+export { ClientComptePage } from './compte/ClientComptePage'
+export { ClientPanierPage } from './panier/ClientPanierPage'
 export { ClientReservationsPage } from './reservations/ClientReservationsPage'
 export { ClientFavoritesPage } from './favorites/ClientFavoritesPage'
 export { ClientProfilePage } from './profile/ClientProfilePage'

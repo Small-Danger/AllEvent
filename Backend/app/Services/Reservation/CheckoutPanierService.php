@@ -114,7 +114,7 @@ class CheckoutPanierService
 
             $billet = Billet::create([
                 'reservation_id' => $reservation->id,
-                'public_code' => Str::upper(Str::random(12)),
+                'code_public' => Str::upper(Str::random(12)),
                 'payload_qr' => null,
                 'statut' => 'emis',
                 'emis_le' => now(),

@@ -34,6 +34,7 @@ function asList(payload) {
 
 function statusToUi(status, dateString) {
   if (status === 'annulee' || status === 'remboursee') return 'cancelled'
+  if (status === 'en_attente_paiement') return 'pending_payment'
   if (status === 'payee' || status === 'confirmee') {
     if (!dateString) return 'upcoming'
     return new Date(dateString) < new Date() ? 'done' : 'upcoming'
@@ -60,7 +61,7 @@ export function mapReservationToUi(reservation) {
   const dateTime = creneau?.debut_at || reservation?.created_at
   const date = dateTime ? new Date(dateTime).toISOString().slice(0, 10) : '-'
   const hour = dateTime ? new Date(dateTime).toISOString().slice(11, 16) : '--:--'
-  const amount = Number(reservation?.paiement?.montant || 0)
+  const amount = Number(reservation?.paiement?.montant ?? reservation?.montant_total ?? 0)
   const crenauxEnded = latestFinMs != null && latestFinMs < Date.now()
   const canLeaveReview =
     reservation?.statut === 'payee' && crenauxEnded && Boolean(activite?.id)
@@ -69,11 +70,17 @@ export function mapReservationToUi(reservation) {
     id: reservation.id,
     activityId: activite?.id,
     title: activite?.titre || `Reservation #${reservation.id}`,
+    providerName: activite?.prestataire?.nom || activite?.prestataire?.raison_sociale || '',
     city: activite?.ville?.nom || '-',
+    placeName: activite?.lieu?.nom || '',
+    placeAddress: activite?.lieu?.adresse || '',
+    latitude: activite?.lieu?.latitude != null ? Number(activite.lieu.latitude) : null,
+    longitude: activite?.lieu?.longitude != null ? Number(activite.lieu.longitude) : null,
     date,
     hour,
     guests: Number(line?.quantite || 1),
     amount,
+    billetCode: reservation?.billet?.code_public || '',
     status: statusToUi(reservation?.statut, dateTime),
     backendStatus: reservation?.statut,
     canLeaveReview,
@@ -95,6 +102,22 @@ export function mapFavoriteToUi(favori) {
   }
 }
 
+function mapPanierLine(ligne) {
+  const creneau = ligne?.creneau || {}
+  const activite = creneau?.activite || {}
+  const dateTime = creneau?.debut_at || null
+  return {
+    id: ligne?.id,
+    creneauId: creneau?.id,
+    title: activite?.titre || 'Activite',
+    city: activite?.ville?.nom || '-',
+    date: dateTime ? new Date(dateTime).toISOString().slice(0, 10) : '-',
+    hour: dateTime ? new Date(dateTime).toISOString().slice(11, 16) : '--:--',
+    quantite: Number(ligne?.quantite || 1),
+    prixUnitaire: Number(ligne?.prix_unitaire_snapshot || activite?.prix_base || 0),
+  }
+}
+
 export const clientApi = {
   async getDashboardData() {
     const [profilePayload, reservationsPayload, favoritesPayload] = await Promise.all([
@@ -112,7 +135,13 @@ export const clientApi = {
 
   async getReservations() {
     const payload = await request('/client/reservations')
-    return asList(payload).map(mapReservationToUi)
+    const rows = Array.isArray(payload?.data) ? payload.data : asList(payload)
+    return rows.map(mapReservationToUi)
+  },
+
+  async getReservationDetail(reservationId) {
+    const payload = await request(`/client/reservations/${reservationId}`)
+    return mapReservationToUi(payload)
   },
 
   async cancelReservation(reservationId) {
@@ -241,5 +270,60 @@ export const clientApi = {
   async getNotifications() {
     const payload = await request('/client/notifications')
     return asList(payload)
+  },
+
+  async getPanier() {
+    const payload = await request('/client/panier')
+    const lignes = Array.isArray(payload?.lignes) ? payload.lignes.map(mapPanierLine) : []
+    return {
+      id: payload?.id,
+      statut: payload?.statut || 'actif',
+      lignes,
+    }
+  },
+
+  async viderPanier() {
+    return request('/client/panier', { method: 'DELETE' })
+  },
+
+  async addPanierLigne(creneauId, quantite) {
+    return request('/client/panier/lignes', {
+      method: 'POST',
+      body: JSON.stringify({
+        creneau_id: Number(creneauId),
+        quantite: Number(quantite),
+      }),
+    })
+  },
+
+  async updatePanierLigne(ligneId, quantite) {
+    return request(`/client/panier/lignes/${ligneId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ quantite: Number(quantite) }),
+    })
+  },
+
+  async removePanierLigne(ligneId) {
+    return request(`/client/panier/lignes/${ligneId}`, { method: 'DELETE' })
+  },
+
+  async validerPanier(payload = {}) {
+    return request('/client/reservations', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async simulerPaiementReservation(reservationId) {
+    return request(`/client/reservations/${reservationId}/paiement/simuler`, {
+      method: 'POST',
+    })
+  },
+
+  async addFavorite(activiteId) {
+    return request('/client/favoris', {
+      method: 'POST',
+      body: JSON.stringify({ activite_id: Number(activiteId) }),
+    })
   },
 }

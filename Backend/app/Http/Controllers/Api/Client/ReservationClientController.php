@@ -24,7 +24,7 @@ class ReservationClientController extends Controller
     {
         $data = $request->user()
             ->reservations()
-            ->with(['lignes.creneau.activite', 'paiement', 'billet', 'promotion'])
+            ->with(['lignes.creneau.activite.prestataire', 'lignes.creneau.activite.lieu', 'paiement', 'billet', 'promotion'])
             ->latest()
             ->paginate(20);
 
@@ -35,7 +35,7 @@ class ReservationClientController extends Controller
     {
         $this->autoriserReservation($request, $reservation);
 
-        $reservation->load(['lignes.creneau.activite', 'paiement', 'billet', 'promotion']);
+        $reservation->load(['lignes.creneau.activite.prestataire', 'lignes.creneau.activite.lieu', 'paiement', 'billet', 'promotion']);
 
         return response()->json($reservation);
     }

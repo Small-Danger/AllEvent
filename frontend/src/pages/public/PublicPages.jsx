@@ -1,126 +1,122 @@
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import logoAllevent from '../../assets/brand/logo-allevent.png'
 import { useAuth } from '../../context/useAuth'
+import { clientApi } from '../../services/clientApi'
+import { publicApi } from '../../services/publicApi'
 import './public.css'
 
 function resolveHomeByRole(role) {
   if (role === 'admin') return '/admin/dashboard'
   if (role === 'prestataire') return '/prestataire/dashboard'
-  return '/dashboard'
+  return '/'
 }
 
 export function LandingPage() {
-  const heroSlides = useMemo(
-    () => [
+  const { auth } = useAuth()
+  const navigate = useNavigate()
+  const isClient = auth.isAuthenticated && auth.role === 'client'
+
+  const heroSlides = useMemo(() => {
+    const slides = [
       {
         id: 1,
-        title: 'Le meilleur des experiences en un seul endroit',
-        text: 'Concerts, loisirs, sorties famille et aventures locales selectionnes pour toi.',
+        title: 'Le meilleur des expériences en un seul endroit',
+        text: 'Concerts, loisirs, sorties famille et aventures locales sélectionnées pour vous.',
         image:
           'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=80',
         cta: '/search',
         ctaLabel: 'Explorer maintenant',
       },
-      {
+    ]
+    if (!isClient) {
+      slides.push({
         id: 2,
-        title: 'Reserve en quelques clics',
-        text: 'Parcours simple, activites verifiees et tarifs transparents.',
+        title: 'Réservez en quelques clics',
+        text: 'Parcours simple, activités vérifiées et tarifs transparents.',
         image:
           'https://images.unsplash.com/photo-1505236858219-8359eb29e329?auto=format&fit=crop&w=1400&q=80',
         cta: '/register',
-        ctaLabel: 'Creer un compte',
-      },
-      {
-        id: 3,
-        title: 'Passe pro avec ALL EVENT',
-        text: 'Publie tes activites, gere tes reservations et fais grandir ton business.',
-        image:
-          'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=80',
-        cta: '/become-prestataire',
-        ctaLabel: 'Devenir prestataire',
-      },
-    ],
-    [],
-  )
+        ctaLabel: 'Créer un compte',
+      })
+    }
+    slides.push({
+      id: 3,
+      title: 'Passez pro avec ALL EVENT',
+      text: 'Publiez vos activités, gérez vos réservations et développez votre activité.',
+      image:
+        'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1400&q=80',
+      cta: '/become-prestataire',
+      ctaLabel: 'Devenir prestataire',
+    })
+    return slides
+  }, [isClient])
+
   const [activeSlide, setActiveSlide] = useState(0)
+  const [featuredActivities, setFeaturedActivities] = useState([])
+  const [featLoading, setFeatLoading] = useState(true)
+  const [featError, setFeatError] = useState('')
+  const [quickQ, setQuickQ] = useState('')
+  const [villesOptions, setVillesOptions] = useState([])
+  const [quickVilleId, setQuickVilleId] = useState('')
+
+  useEffect(() => {
+    setActiveSlide(0)
+  }, [heroSlides.length])
 
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % heroSlides.length)
     }, 4500)
-
     return () => clearInterval(timer)
   }, [heroSlides.length])
 
-  const featuredActivities = [
-    {
-      id: 1,
-      title: 'Concert Electro en Plein Air',
-      city: 'Douala',
-      category: 'Musique',
-      rating: 4.8,
-      reviews: 134,
-      price: 25000,
-      image:
-        'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 2,
-      title: 'Atelier Cuisine Locale',
-      city: 'Yaounde',
-      category: 'Gastronomie',
-      rating: 4.7,
-      reviews: 92,
-      price: 18000,
-      image:
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 3,
-      title: 'Randonnee Cascade',
-      city: 'Bafoussam',
-      category: 'Nature',
-      rating: 4.9,
-      reviews: 201,
-      price: 22000,
-      image:
-        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 4,
-      title: 'Escape Game Urbain',
-      city: 'Douala',
-      category: 'Loisir',
-      rating: 4.6,
-      reviews: 77,
-      price: 20000,
-      image:
-        'https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 5,
-      title: 'Tour Street Art',
-      city: 'Yaounde',
-      category: 'Culture',
-      rating: 4.5,
-      reviews: 58,
-      price: 15000,
-      image:
-        'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 6,
-      title: 'Sunset Boat Party',
-      city: 'Kribi',
-      category: 'Premium',
-      rating: 4.9,
-      reviews: 245,
-      price: 35000,
-      image:
-        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80',
-    },
-  ]
+  useEffect(() => {
+    let active = true
+    publicApi
+      .getVilles()
+      .then((rows) => {
+        if (!active) return
+        setVillesOptions(Array.isArray(rows) ? rows : [])
+      })
+      .catch(() => {
+        if (active) setVillesOptions([])
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    setFeatLoading(true)
+    setFeatError('')
+    publicApi
+      .getActivites({ per_page: 6 })
+      .then((data) => {
+        if (!active) return
+        setFeaturedActivities(data.items || [])
+      })
+      .catch((err) => {
+        if (!active) return
+        setFeatError(err instanceof Error ? err.message : 'Erreur catalogue.')
+        setFeaturedActivities([])
+      })
+      .finally(() => {
+        if (active) setFeatLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const onQuickSearch = (event) => {
+    event.preventDefault()
+    const sp = new URLSearchParams()
+    if (quickQ.trim()) sp.set('q', quickQ.trim())
+    if (quickVilleId) sp.set('ville_id', quickVilleId)
+    navigate(`/search${sp.toString() ? `?${sp.toString()}` : ''}`)
+  }
 
   return (
     <main className="landing">
@@ -183,12 +179,30 @@ export function LandingPage() {
             ultra rapide.
           </p>
         </div>
-        <div className="quick-actions-bar">
-          <input type="text" placeholder="Rechercher une activite..." />
-          <input type="text" placeholder="Ville" />
-          <input type="date" />
-          <button className="btn btn-primary">Rechercher</button>
-        </div>
+        <form className="quick-actions-bar" onSubmit={onQuickSearch}>
+          <input
+            type="search"
+            placeholder="Rechercher une activité..."
+            value={quickQ}
+            onChange={(e) => setQuickQ(e.target.value)}
+            aria-label="Mots-clés"
+          />
+          <select
+            value={quickVilleId}
+            onChange={(e) => setQuickVilleId(e.target.value)}
+            aria-label="Ville"
+          >
+            <option value="">Toutes les villes</option>
+            {villesOptions.map((v) => (
+              <option key={v.id} value={String(v.id)}>
+                {v.nom}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="btn btn-primary">
+            Rechercher
+          </button>
+        </form>
       </section>
 
       <section className="activities-section">
@@ -196,6 +210,15 @@ export function LandingPage() {
           <h2>Activites a la une</h2>
           <Link to="/search">Voir tout le catalogue</Link>
         </div>
+        {featLoading && <p className="landing-catalog-hint">Chargement des activités…</p>}
+        {!featLoading && featError && (
+          <p className="landing-catalog-hint landing-catalog-hint--error">{featError}</p>
+        )}
+        {!featLoading && !featError && featuredActivities.length === 0 && (
+          <p className="landing-catalog-hint">
+            Aucune activité publiée pour le moment. Revenez bientôt ou explorez le catalogue complet.
+          </p>
+        )}
         <div className="activity-grid">
           {featuredActivities.map((item) => (
             <Link
@@ -205,18 +228,18 @@ export function LandingPage() {
             >
               <article className="activity-card">
                 <div className="activity-media">
-                  <img src={item.image} alt={item.title} />
+                  <img src={item.image} alt="" />
                   <span className="activity-badge">{item.category}</span>
                 </div>
                 <div className="activity-content">
                   <h3>{item.title}</h3>
                   <p className="activity-meta">{item.city}</p>
                   <p className="activity-rating">
-                    {item.rating} ({item.reviews} avis)
+                    {item.reviews > 0 ? `${item.reviews} avis` : 'Nouveau sur la plateforme'}
                   </p>
                   <div className="activity-footer">
                     <strong>{item.price.toLocaleString('fr-FR')} XAF</strong>
-                    <span className="activity-details">Details</span>
+                    <span className="activity-details">Détails</span>
                   </div>
                 </div>
               </article>
@@ -292,9 +315,11 @@ export function LandingPage() {
           <Link className="btn btn-primary" to="/become-prestataire">
             Commencer maintenant
           </Link>
-          <Link className="btn btn-light" to="/register">
-            Creer mon compte
-          </Link>
+          {!isClient ? (
+            <Link className="btn btn-light" to="/register">
+              Créer mon compte
+            </Link>
+          ) : null}
         </div>
       </section>
 
@@ -317,164 +342,120 @@ export function LandingPage() {
 }
 
 export function SearchPage() {
-  const activities = [
-    {
-      id: 1,
-      title: 'Concert Electro en Plein Air',
-      city: 'Douala',
-      category: 'Musique',
-      rating: 4.8,
-      reviews: 134,
-      price: 25000,
-      image:
-        'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 2,
-      title: 'Atelier Cuisine Locale',
-      city: 'Yaounde',
-      category: 'Gastronomie',
-      rating: 4.7,
-      reviews: 92,
-      price: 18000,
-      image:
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 3,
-      title: 'Randonnee Cascade',
-      city: 'Bafoussam',
-      category: 'Nature',
-      rating: 4.9,
-      reviews: 201,
-      price: 22000,
-      image:
-        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 4,
-      title: 'Escape Game Urbain',
-      city: 'Douala',
-      category: 'Loisir',
-      rating: 4.6,
-      reviews: 77,
-      price: 20000,
-      image:
-        'https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 5,
-      title: 'Tour Street Art',
-      city: 'Yaounde',
-      category: 'Culture',
-      rating: 4.5,
-      reviews: 58,
-      price: 15000,
-      image:
-        'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 6,
-      title: 'Sunset Boat Party',
-      city: 'Kribi',
-      category: 'Premium',
-      rating: 4.9,
-      reviews: 245,
-      price: 35000,
-      image:
-        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 7,
-      title: 'Croisiere Lagune',
-      city: 'Kribi',
-      category: 'Nature',
-      rating: 4.6,
-      reviews: 64,
-      price: 27000,
-      image:
-        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 8,
-      title: 'Soiree Salsa Live',
-      city: 'Douala',
-      category: 'Musique',
-      rating: 4.4,
-      reviews: 88,
-      price: 12000,
-      image:
-        'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=900&q=80',
-    },
-  ]
+  const outlet = useOutletContext()
+  const publicCity = outlet?.publicCity
+  const [searchParams] = useSearchParams()
 
-  const [search, setSearch] = useState('')
-  const [city, setCity] = useState('all')
-  const [category, setCategory] = useState('all')
-  const [sortBy, setSortBy] = useState('popular')
-  const [date, setDate] = useState('')
+  const [villes, setVilles] = useState([])
+  const [categories, setCategories] = useState([])
+  const [items, setItems] = useState([])
+  const [page, setPage] = useState(1)
+  const [lastPage, setLastPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const [search, setSearch] = useState(() => searchParams.get('q') || '')
+  const [villeId, setVilleId] = useState(() => searchParams.get('ville_id') || '')
+  const [categorieId, setCategorieId] = useState(() => searchParams.get('categorie_id') || '')
+
+  useEffect(() => {
+    setSearch(searchParams.get('q') || '')
+    setVilleId(searchParams.get('ville_id') || '')
+    setCategorieId(searchParams.get('categorie_id') || '')
+    setPage(1)
+  }, [searchParams])
+  const [sortBy, setSortBy] = useState('recent')
   const [minPrice, setMinPrice] = useState(0)
-  const [maxPrice, setMaxPrice] = useState(50000)
-  const [minRating, setMinRating] = useState(0)
+  const [maxPrice, setMaxPrice] = useState(500000)
 
-  const cities = useMemo(
-    () => ['all', ...new Set(activities.map((item) => item.city))],
-    [activities],
-  )
-
-  const categories = useMemo(
-    () => ['all', ...new Set(activities.map((item) => item.category))],
-    [activities],
-  )
-
-  const filteredActivities = useMemo(() => {
-    const q = search.trim().toLowerCase()
-
-    let result = activities.filter((item) => {
-      const matchQuery =
-        q.length === 0 ||
-        item.title.toLowerCase().includes(q) ||
-        item.city.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q)
-      const matchCity = city === 'all' || item.city === city
-      const matchCategory = category === 'all' || item.category === category
-      const matchPrice = item.price >= minPrice && item.price <= maxPrice
-      const matchRating = item.rating >= minRating
-
-      return matchQuery && matchCity && matchCategory && matchPrice && matchRating
-    })
-
-    if (sortBy === 'price_asc') {
-      result = [...result].sort((a, b) => a.price - b.price)
-    } else if (sortBy === 'price_desc') {
-      result = [...result].sort((a, b) => b.price - a.price)
-    } else if (sortBy === 'rating') {
-      result = [...result].sort((a, b) => b.rating - a.rating)
-    } else {
-      result = [...result].sort((a, b) => b.reviews - a.reviews)
+  useEffect(() => {
+    let active = true
+    Promise.all([publicApi.getVilles(), publicApi.getCategories()])
+      .then(([v, c]) => {
+        if (!active) return
+        setVilles(Array.isArray(v) ? v : [])
+        setCategories(Array.isArray(c) ? c : [])
+      })
+      .catch(() => {
+        if (active) {
+          setVilles([])
+          setCategories([])
+        }
+      })
+    return () => {
+      active = false
     }
+  }, [])
 
-    return result
-  }, [activities, category, city, maxPrice, minPrice, minRating, search, sortBy])
+  useEffect(() => {
+    if (!publicCity || !villes.length) return
+    if (searchParams.get('ville_id')) return
+    const match = villes.find(
+      (x) =>
+        String(x.nom || '')
+          .toLowerCase()
+          .includes(String(publicCity).toLowerCase()) ||
+        String(publicCity).toLowerCase().includes(String(x.nom || '').toLowerCase()),
+    )
+    if (match) setVilleId(String(match.id))
+  }, [publicCity, villes, searchParams])
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setError('')
+    publicApi
+      .getActivites({
+        page,
+        per_page: 12,
+        q: search.trim() || undefined,
+        ville_id: villeId || undefined,
+        categorie_id: categorieId || undefined,
+        prix_min: minPrice > 0 ? minPrice : undefined,
+        prix_max: maxPrice < 500000 ? maxPrice : undefined,
+      })
+      .then((data) => {
+        if (!active) return
+        let list = data.items || []
+        if (sortBy === 'price_asc') list = [...list].sort((a, b) => a.price - b.price)
+        else if (sortBy === 'price_desc') list = [...list].sort((a, b) => b.price - a.price)
+        else if (sortBy === 'popular') list = [...list].sort((a, b) => b.reviews - a.reviews)
+        setItems(list)
+        setLastPage(data.last_page || 1)
+        setTotal(data.total ?? list.length)
+      })
+      .catch((err) => {
+        if (!active) return
+        setError(err instanceof Error ? err.message : 'Erreur catalogue.')
+        setItems([])
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [page, search, villeId, categorieId, minPrice, maxPrice, sortBy])
 
   const resetFilters = () => {
     setSearch('')
-    setCity('all')
-    setCategory('all')
-    setSortBy('popular')
-    setDate('')
+    setVilleId('')
+    setCategorieId('')
+    setSortBy('recent')
     setMinPrice(0)
-    setMaxPrice(50000)
-    setMinRating(0)
+    setMaxPrice(500000)
+    setPage(1)
   }
+
+  const displayList = items
 
   return (
     <main className="catalog-page">
       <section className="catalog-head">
-        <h1>Explorer les activites</h1>
+        <h1>Explorer les activités</h1>
         <p>
-          Filtre par ville, categorie ou budget pour trouver rapidement
-          l&apos;experience qui te correspond.
+          Activités publiées par nos prestataires partenaires — filtrez par ville, catégorie et budget.
         </p>
       </section>
 
@@ -482,93 +463,102 @@ export function SearchPage() {
         <input
           type="search"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Rechercher une activite..."
-          aria-label="Rechercher une activite"
+          onChange={(event) => {
+            setSearch(event.target.value)
+            setPage(1)
+          }}
+          placeholder="Rechercher une activité..."
+          aria-label="Rechercher une activité"
         />
-        <select value={city} onChange={(event) => setCity(event.target.value)}>
-          {cities.map((value) => (
-            <option key={value} value={value}>
-              {value === 'all' ? 'Toutes les villes' : value}
+        <select
+          value={villeId}
+          onChange={(event) => {
+            setVilleId(event.target.value)
+            setPage(1)
+          }}
+        >
+          <option value="">Toutes les villes</option>
+          {villes.map((v) => (
+            <option key={v.id} value={String(v.id)}>
+              {v.nom}
             </option>
           ))}
         </select>
         <select
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
+          value={categorieId}
+          onChange={(event) => {
+            setCategorieId(event.target.value)
+            setPage(1)
+          }}
         >
-          {categories.map((value) => (
-            <option key={value} value={value}>
-              {value === 'all' ? 'Toutes les categories' : value}
+          <option value="">Toutes les catégories</option>
+          {categories.map((c) => (
+            <option key={c.id} value={String(c.id)}>
+              {c.nom}
             </option>
           ))}
         </select>
         <select
           value={sortBy}
           onChange={(event) => setSortBy(event.target.value)}
-          aria-label="Trier les activites"
+          aria-label="Trier les activités"
         >
-          <option value="popular">Plus populaires</option>
-          <option value="rating">Meilleure note</option>
+          <option value="recent">Plus récentes</option>
+          <option value="popular">Plus d&apos;avis</option>
           <option value="price_asc">Prix croissant</option>
-          <option value="price_desc">Prix decroissant</option>
+          <option value="price_desc">Prix décroissant</option>
         </select>
-        <input
-          type="date"
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
-          aria-label="Date souhaitee"
-        />
         <div className="catalog-range">
-          <label htmlFor="minPrice">Prix min: {minPrice.toLocaleString('fr-FR')} XAF</label>
+          <label htmlFor="minPrice">Prix min : {minPrice.toLocaleString('fr-FR')} XAF</label>
           <input
             id="minPrice"
             type="range"
             min="0"
-            max="50000"
-            step="1000"
+            max="200000"
+            step="5000"
             value={minPrice}
-            onChange={(event) => setMinPrice(Number(event.target.value))}
+            onChange={(event) => {
+              setMinPrice(Number(event.target.value))
+              setPage(1)
+            }}
           />
         </div>
         <div className="catalog-range">
-          <label htmlFor="maxPrice">Prix max: {maxPrice.toLocaleString('fr-FR')} XAF</label>
+          <label htmlFor="maxPrice">Prix max : {maxPrice.toLocaleString('fr-FR')} XAF</label>
           <input
             id="maxPrice"
             type="range"
             min="5000"
-            max="70000"
-            step="1000"
+            max="500000"
+            step="5000"
             value={maxPrice}
-            onChange={(event) => setMaxPrice(Number(event.target.value))}
-          />
-        </div>
-        <div className="catalog-range">
-          <label htmlFor="minRating">Note min: {minRating.toFixed(1)}</label>
-          <input
-            id="minRating"
-            type="range"
-            min="0"
-            max="5"
-            step="0.1"
-            value={minRating}
-            onChange={(event) => setMinRating(Number(event.target.value))}
+            onChange={(event) => {
+              setMaxPrice(Number(event.target.value))
+              setPage(1)
+            }}
           />
         </div>
         <button type="button" className="btn btn-light catalog-reset" onClick={resetFilters}>
-          Reinitialiser les filtres
+          Réinitialiser les filtres
         </button>
       </section>
 
       <section className="catalog-results">
-        <p className="catalog-count">
-          {filteredActivities.length} activite
-          {filteredActivities.length > 1 ? 's' : ''} trouvee
-          {filteredActivities.length > 1 ? 's' : ''}
-        </p>
+        {loading && <p className="catalog-count">Chargement…</p>}
+        {!loading && error && <p className="catalog-count catalog-count--error">{error}</p>}
+        {!loading && !error && (
+          <p className="catalog-count">
+            {total} résultat{total > 1 ? 's' : ''}
+            {lastPage > 1 ? ` — page ${page} / ${lastPage}` : ''}
+          </p>
+        )}
+
+        {!loading && !error && displayList.length === 0 && (
+          <p className="catalog-empty">Aucune activité ne correspond à ces critères.</p>
+        )}
 
         <div className="catalog-grid">
-          {filteredActivities.map((item) => (
+          {displayList.map((item) => (
             <Link
               key={item.id}
               to={`/activity/${item.id}`}
@@ -576,24 +566,43 @@ export function SearchPage() {
             >
               <article className="catalog-card">
                 <div className="catalog-media">
-                  <img src={item.image} alt={item.title} />
+                  <img src={item.image} alt="" />
                   <span className="catalog-badge">{item.category}</span>
                 </div>
                 <div className="catalog-content">
                   <h3>{item.title}</h3>
                   <p>{item.city}</p>
-                  <p>
-                    {item.rating} ({item.reviews} avis)
-                  </p>
+                  <p>{item.reviews > 0 ? `${item.reviews} avis` : 'Nouveau'}</p>
                   <div className="catalog-footer">
                     <strong>{item.price.toLocaleString('fr-FR')} XAF</strong>
-                    <span>Details</span>
+                    <span>Détails</span>
                   </div>
                 </div>
               </article>
             </Link>
           ))}
         </div>
+
+        {!loading && lastPage > 1 ? (
+          <div className="catalog-pager">
+            <button
+              type="button"
+              className="btn btn-light"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Précédent
+            </button>
+            <button
+              type="button"
+              className="btn btn-light"
+              disabled={page >= lastPage}
+              onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+            >
+              Suivant
+            </button>
+          </div>
+        ) : null}
       </section>
     </main>
   )
@@ -601,57 +610,120 @@ export function SearchPage() {
 
 export function ActivityDetailsPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { auth } = useAuth()
+  const isClient = auth.isAuthenticated && auth.role === 'client'
 
-  const activities = [
-    {
-      id: 1,
-      title: 'Concert Electro en Plein Air',
-      city: 'Douala',
-      category: 'Musique',
-      rating: 4.8,
-      reviews: 134,
-      price: 25000,
-      image:
-        'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1200&q=80',
-      description:
-        'Une experience musicale immersive avec DJ internationaux, ambiance open air et espaces chill.',
-    },
-    {
-      id: 2,
-      title: 'Atelier Cuisine Locale',
-      city: 'Yaounde',
-      category: 'Gastronomie',
-      rating: 4.7,
-      reviews: 92,
-      price: 18000,
-      image:
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
-      description:
-        'Apprends les recettes locales avec un chef, puis deguste les plats prepares en groupe.',
-    },
-    {
-      id: 3,
-      title: 'Randonnee Cascade',
-      city: 'Bafoussam',
-      category: 'Nature',
-      rating: 4.9,
-      reviews: 201,
-      price: 22000,
-      image:
-        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1200&q=80',
-      description:
-        'Parcours guide en montagne avec points panoramiques, collation incluse et photos souvenir.',
-    },
-  ]
+  const [activity, setActivity] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [creneauId, setCreneauId] = useState('')
+  const [qty, setQty] = useState(1)
+  const [submitting, setSubmitting] = useState(false)
+  const [feedback, setFeedback] = useState('')
 
-  const activity = activities.find((item) => String(item.id) === String(id))
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setError('')
+    publicApi
+      .getActivite(id)
+      .then((data) => {
+        if (!active) return
+        setActivity(data)
+        if (data?.creneaux?.length) setCreneauId(String(data.creneaux[0].id))
+        else setCreneauId('')
+      })
+      .catch((err) => {
+        if (!active) return
+        setError(err instanceof Error ? err.message : 'Erreur.')
+        setActivity(null)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [id])
 
-  if (!activity) {
+  const selectedCreneau = activity?.creneaux?.find((c) => String(c.id) === String(creneauId))
+  const maxPlaces = selectedCreneau ? Math.min(20, Math.max(1, selectedCreneau.places)) : 1
+
+  const onAddToPanier = async (redirectToPanier = true) => {
+    setFeedback('')
+    if (!isClient) {
+      navigate('/login', { state: { from: location } })
+      return false
+    }
+    if (!creneauId || !activity) {
+      setFeedback('Choisissez un créneau disponible.')
+      return false
+    }
+    setSubmitting(true)
+    try {
+      await clientApi.addPanierLigne(Number(creneauId), Math.min(qty, maxPlaces))
+      if (redirectToPanier) {
+        navigate('/panier')
+      } else {
+        setFeedback('Ajouté au panier.')
+      }
+      return true
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : 'Ajout panier impossible.')
+      return false
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const onReserveNow = async () => {
+    const added = await onAddToPanier(false)
+    if (!added) return
+    setSubmitting(true)
+    try {
+      const checkout = await clientApi.validerPanier()
+      const reservationId = checkout?.reservation?.id
+      if (reservationId) {
+        await clientApi.simulerPaiementReservation(reservationId)
+      }
+      navigate('/reservations')
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : 'Réservation impossible.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const onFavorite = async () => {
+    setFeedback('')
+    if (!isClient) {
+      navigate('/login', { state: { from: location } })
+      return
+    }
+    try {
+      await clientApi.addFavorite(Number(id))
+      setFeedback('Ajouté à vos favoris.')
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : 'Action impossible.')
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="activity-page">
+        <p className="activity-state">Chargement de l&apos;activité…</p>
+      </main>
+    )
+  }
+
+  if (error || !activity) {
     return (
       <main className="simple-page">
         <section className="simple-card">
-          <h1>Activite introuvable</h1>
-          <p>Cette activite n&apos;existe pas ou a ete retiree du catalogue.</p>
+          <h1>Activité introuvable</h1>
+          <p>Cette activité n&apos;est pas publiée ou n&apos;existe pas.</p>
           <Link to="/search" className="btn btn-primary">
             Retour au catalogue
           </Link>
@@ -663,7 +735,7 @@ export function ActivityDetailsPage() {
   return (
     <main className="activity-page">
       <section className="activity-hero">
-        <img src={activity.image} alt={activity.title} />
+        <img src={activity.image} alt="" />
         <span>{activity.category}</span>
       </section>
 
@@ -672,18 +744,101 @@ export function ActivityDetailsPage() {
           <h1>{activity.title}</h1>
           <p className="activity-location">{activity.city}</p>
           <p className="activity-score">
-            {activity.rating} ({activity.reviews} avis)
+            {activity.rating > 0
+              ? `${activity.rating} / 5 (${activity.reviews} avis)`
+              : `${activity.reviews} avis`}
           </p>
-          <p className="activity-description">{activity.description}</p>
+          <p className="activity-description">{activity.description || 'Description à venir.'}</p>
         </div>
 
         <aside className="activity-booking">
-          <strong>{activity.price.toLocaleString('fr-FR')} XAF</strong>
-          <p>Par personne - confirmation immediate</p>
-          <button className="btn btn-primary">Reserver maintenant</button>
-          <Link className="btn btn-light" to="/register">
-            Creer un compte pour continuer
-          </Link>
+          {selectedCreneau ? (
+            <p className="activity-price-line">
+              <strong>{selectedCreneau.prix.toLocaleString('fr-FR')} XAF</strong>
+              <span>par place (créneau sélectionné)</span>
+            </p>
+          ) : (
+            <p className="activity-price-line">
+              <strong>{activity.price.toLocaleString('fr-FR')} XAF</strong>
+              <span>prix de base</span>
+            </p>
+          )}
+
+          {activity.creneaux?.length ? (
+            <>
+              <label className="activity-field">
+                <span>Créneau</span>
+                <select
+                  value={creneauId}
+                  onChange={(e) => {
+                    setCreneauId(e.target.value)
+                    setQty(1)
+                  }}
+                >
+                  {activity.creneaux.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.debutAt
+                        ? new Date(c.debutAt).toLocaleString('fr-FR', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })
+                        : `Créneau #${c.id}`}{' '}
+                      — {c.places} place(s)
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="activity-field">
+                <span>Quantité</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={maxPlaces}
+                  value={qty}
+                  onChange={(e) => setQty(Math.max(1, Math.min(maxPlaces, Number(e.target.value) || 1)))}
+                />
+              </label>
+            </>
+          ) : (
+            <p className="activity-no-slots">Aucun créneau ouvert pour le moment. Revenez plus tard.</p>
+          )}
+
+          {feedback ? <p className="activity-feedback">{feedback}</p> : null}
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={submitting || !activity.creneaux?.length}
+            onClick={onReserveNow}
+          >
+            {submitting ? 'Traitement…' : 'Réserver et payer (simulation)'}
+          </button>
+
+          {isClient ? (
+            <button
+              type="button"
+              className="btn btn-light"
+              disabled={submitting || !activity.creneaux?.length}
+              onClick={() => onAddToPanier(true)}
+            >
+              Ajouter au panier
+            </button>
+          ) : null}
+
+          {isClient ? (
+            <button type="button" className="btn btn-light" onClick={onFavorite}>
+              Ajouter aux favoris
+            </button>
+          ) : (
+            <>
+              <Link className="btn btn-light" to="/login" state={{ from: location }}>
+                Se connecter pour réserver
+              </Link>
+              <Link className="btn btn-light" to="/register" state={{ from: location }}>
+                Créer un compte
+              </Link>
+            </>
+          )}
         </aside>
       </section>
     </main>
@@ -694,58 +849,87 @@ export function BecomePrestatairePage() {
   return (
     <main className="become-page">
       <section className="become-hero">
-        <div className="become-pro-content">
-          <img src={logoAllevent} alt="ALL EVENT logo" />
-          <div>
-            <h1>Devenir prestataire sur ALL EVENT</h1>
-            <p>
-              Publie tes activites, recois des reservations et suis tes
-              performances depuis ton espace pro.
-            </p>
-          </div>
+        <div className="become-hero-top">
+          <p className="become-kicker">Programme Prestataire</p>
+          <h1>Développez vos ventes d&apos;activités avec ALL EVENT</h1>
+          <p>
+            Gérez votre catalogue, vos créneaux et vos réservations depuis un espace pro unique.
+            Vous gardez le contrôle, nous apportons la demande.
+          </p>
         </div>
-        <div className="become-pro-actions">
+        <div className="become-hero-kpis">
+          <article>
+            <strong>+320</strong>
+            <span>prestataires actifs</span>
+          </article>
+          <article>
+            <strong>+12k</strong>
+            <span>réservations validées</span>
+          </article>
+          <article>
+            <strong>4.8/5</strong>
+            <span>satisfaction moyenne</span>
+          </article>
+        </div>
+        <div className="become-pro-actions become-pro-actions--hero">
           <Link className="btn btn-primary" to="/register">
-            Creer mon espace pro
+            Créer mon espace pro
           </Link>
           <Link className="btn btn-light" to="/login">
-            J ai deja un compte
+            J&apos;ai déjà un compte
           </Link>
         </div>
       </section>
+
       <section className="become-highlights">
         <article>
-          <h3>Audience qualifiee</h3>
-          <p>Expose tes experiences a des utilisateurs prets a reserver.</p>
+          <h3>Visibilité qualifiée</h3>
+          <p>Exposez vos expériences à des clients qui cherchent déjà à réserver.</p>
         </article>
         <article>
-          <h3>Commission transparente</h3>
-          <p>Modele clair, sans surprise, adapte aux prestataires locaux.</p>
+          <h3>Pilotage en temps réel</h3>
+          <p>Suivez les réservations, les paiements et la performance de vos offres.</p>
         </article>
         <article>
-          <h3>Accompagnement dedie</h3>
-          <p>Support operationnel pour lancer et scaler ton activite.</p>
+          <h3>Workflow professionnel</h3>
+          <p>Soumission, validation admin et publication catalogue dans un flux propre.</p>
         </article>
       </section>
+
       <section className="become-process">
-        <h2>Ton onboarding en 3 etapes</h2>
+        <h2>Votre onboarding en 4 étapes</h2>
         <div className="become-process-grid">
           <article>
             <span>1</span>
-            <h3>Creer ton profil</h3>
-            <p>Renseigne ton activite, ton equipe et tes zones d&apos;intervention.</p>
+            <h3>Créer votre profil</h3>
+            <p>Renseignez votre activité, vos zones et vos informations de contact.</p>
           </article>
           <article>
             <span>2</span>
-            <h3>Publier tes offres</h3>
-            <p>Ajoute photos, disponibilites, tarifs et options de reservation.</p>
+            <h3>Configurer vos offres</h3>
+            <p>Ajoutez vos activités, médias, prix et créneaux de disponibilité.</p>
           </article>
           <article>
             <span>3</span>
+            <h3>Passer la validation</h3>
+            <p>L&apos;équipe admin contrôle puis publie vos activités dans le catalogue.</p>
+          </article>
+          <article>
+            <span>4</span>
             <h3>Vendre et optimiser</h3>
-            <p>Analyse tes performances et augmente ta conversion.</p>
+            <p>Pilotez vos performances et améliorez votre conversion semaine après semaine.</p>
           </article>
         </div>
+      </section>
+
+      <section className="become-requirements">
+        <h2>Ce qu&apos;il vous faut pour démarrer</h2>
+        <ul>
+          <li>Une activité claire avec une description complète.</li>
+          <li>Des créneaux disponibles et un prix cohérent.</li>
+          <li>Des visuels de qualité pour rassurer les clients.</li>
+          <li>Un suivi rapide des réservations et messages.</li>
+        </ul>
       </section>
     </main>
   )

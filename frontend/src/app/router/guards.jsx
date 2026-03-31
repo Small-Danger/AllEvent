@@ -8,8 +8,10 @@ function getDemoRoleBypass(location) {
 
   const clientPaths = [
     '/dashboard',
+    '/panier',
     '/reservations',
     '/favorites',
+    '/compte',
     '/profile',
     '/reviews',
     '/messages',

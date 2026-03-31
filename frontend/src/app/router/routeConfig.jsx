@@ -1,6 +1,5 @@
 import { Navigate } from 'react-router-dom'
 import { PublicLayout } from '../../layouts/PublicLayout'
-import { UserLayout } from '../../layouts/UserLayout'
 import { PrestataireLayout } from '../../layouts/PrestataireLayout'
 import { AdminLayout } from '../../layouts/AdminLayout'
 import {
@@ -16,10 +15,11 @@ import {
   FaqPage,
 } from '../../pages/public/PublicPages'
 import {
-  ClientDashboardPage,
   ClientReservationsPage,
+  ClientPanierPage,
   ClientFavoritesPage,
   ClientProfilePage,
+  ClientComptePage,
   ClientReviewsPage,
   ClientMessagesPage,
   ClientPaymentsPage,
@@ -61,20 +61,17 @@ export const appRoutes = [
       { path: 'terms', element: <TermsPage /> },
       { path: 'privacy', element: <PrivacyPage /> },
       { path: 'faq', element: <FaqPage /> },
-    ],
-  },
-  {
-    element: <RequireAuth />,
-    children: [
       {
-        element: <RequireRole allowedRoles={['client']} />,
+        element: <RequireAuth />,
         children: [
           {
-            element: <UserLayout />,
+            element: <RequireRole allowedRoles={['client']} />,
             children: [
-              { path: 'dashboard', element: <ClientDashboardPage /> },
+              { path: 'dashboard', element: <Navigate to="/" replace /> },
               { path: 'reservations', element: <ClientReservationsPage /> },
+              { path: 'panier', element: <ClientPanierPage /> },
               { path: 'favorites', element: <ClientFavoritesPage /> },
+              { path: 'compte', element: <ClientComptePage /> },
               { path: 'profile', element: <ClientProfilePage /> },
               { path: 'reviews', element: <ClientReviewsPage /> },
               { path: 'messages', element: <ClientMessagesPage /> },
@@ -83,6 +80,11 @@ export const appRoutes = [
           },
         ],
       },
+    ],
+  },
+  {
+    element: <RequireAuth />,
+    children: [
       {
         element: <RequireRole allowedRoles={['prestataire']} />,
         children: [

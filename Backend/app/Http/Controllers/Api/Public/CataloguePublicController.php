@@ -25,13 +25,39 @@ class CataloguePublicController extends Controller
 
     public function activites(Request $request): JsonResponse
     {
-        $perPage = min((int) $request->integer('per_page', 6), 12);
+        $perPage = min((int) $request->integer('per_page', 12), 48);
 
-        $activites = Activite::query()
+        $query = Activite::query()
             ->where('statut', 'publiee')
             ->with(['ville:id,nom', 'categorie:id,nom', 'medias:id,activite_id,url,ordre'])
-            ->latest()
-            ->paginate($perPage);
+            ->withCount(['avis as avis_visible_count' => fn ($q) => $q->where('statut', 'visible')])
+            ->latest();
+
+        if ($request->filled('ville_id')) {
+            $query->where('ville_id', (int) $request->input('ville_id'));
+        }
+
+        if ($request->filled('categorie_id')) {
+            $query->where('categorie_id', (int) $request->input('categorie_id'));
+        }
+
+        if ($request->filled('q')) {
+            $needle = trim((string) $request->input('q'));
+            if ($needle !== '') {
+                $like = '%'.addcslashes($needle, '%_\\').'%';
+                $query->where('titre', 'like', $like);
+            }
+        }
+
+        if ($request->filled('prix_min')) {
+            $query->where('prix_base', '>=', (float) $request->input('prix_min'));
+        }
+
+        if ($request->filled('prix_max')) {
+            $query->where('prix_base', '<=', (float) $request->input('prix_max'));
+        }
+
+        $activites = $query->paginate($perPage);
 
         return response()->json($activites);
     }
@@ -47,6 +73,9 @@ class CataloguePublicController extends Controller
             'categorie:id,nom',
             'lieu:id,nom,adresse,ville_id',
             'medias:id,activite_id,url,ordre',
+            'creneaux' => fn ($q) => $q->where('statut', 'ouvert')
+                ->where('capacite_restante', '>', 0)
+                ->orderBy('debut_at'),
             'avis' => fn ($q) => $q->where('statut', 'visible')->with('user:id,name')->latest()->limit(20),
         ]);
 
