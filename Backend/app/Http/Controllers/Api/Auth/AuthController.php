@@ -12,13 +12,12 @@ use App\Models\PrestataireDocument;
 use App\Models\PrestataireMembre;
 use App\Models\Profil;
 use App\Models\User;
+use App\Services\TransactionalMailer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 /**
  * Gestion de l'authentification API.
@@ -26,6 +25,10 @@ use Illuminate\Validation\Rules\Password;
  */
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly TransactionalMailer $transactionalMailer,
+    ) {}
+
     /**
      * Inscription (compte client par défaut ; le rôle prestataire se fait via process métier / admin).
      */
@@ -45,7 +48,7 @@ class AuthController extends Controller
                     }
                 },
             ],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', 'confirmed', 'string', 'min:8', 'max:255'],
             'prenom' => ['nullable', 'string', 'max:255'],
             'nom' => ['nullable', 'string', 'max:255'],
             'telephone' => [
@@ -65,7 +68,8 @@ class AuthController extends Controller
             'email' => $donnees['email'],
             'password' => $donnees['password'],
             'role' => 'client',
-            'status' => 'inactive',
+            'status' => 'active',
+            'email_verified_at' => now(),
         ]);
 
         if ($request->filled('prenom') || $request->filled('nom') || $request->filled('telephone')) {
@@ -77,16 +81,13 @@ class AuthController extends Controller
             ]);
         }
 
-        [$otpCode] = $this->creerOtp($user);
-        Mail::to($user->email)->send(new OtpActivationMail($user, $otpCode));
+        $jeton = $user->createToken('auth')->plainTextToken;
 
         return response()->json([
-            'message' => 'Compte cree. Un code OTP a ete envoye par email pour activer votre compte.',
-            'otp_required' => true,
-            'user' => [
-                'id' => $user->id,
-                'email' => $user->email,
-            ],
+            'message' => 'Compte cree.',
+            'token' => $jeton,
+            'token_type' => 'Bearer',
+            'user' => $this->formaterUtilisateur($user->load(['profil', 'prestataires'])),
         ], 201);
     }
 
@@ -217,7 +218,7 @@ class AuthController extends Controller
         }
 
         [$otpCode] = $this->creerOtp($user);
-        Mail::to($user->email)->send(new OtpActivationMail($user, $otpCode));
+        $this->transactionalMailer->send($user->email, new OtpActivationMail($user, $otpCode));
 
         return response()->json(['message' => 'Nouveau code OTP envoye.']);
     }
@@ -238,7 +239,7 @@ class AuthController extends Controller
                     }
                 },
             ],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', 'confirmed', 'string', 'min:8', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
             'raison_sociale' => ['required', 'string', 'max:255'],
             'numero_fiscal' => ['required', 'string', 'max:255'],
@@ -292,7 +293,7 @@ class AuthController extends Controller
             }
         });
 
-        Mail::to($user->email)->send(new PrestataireUnderReviewMail($prestataire));
+        $this->transactionalMailer->send($user->email, new PrestataireUnderReviewMail($prestataire));
 
         return response()->json([
             'message' => 'Demande prestataire recue. Notre equipe la verifiera sous 48h ouvrees.',
